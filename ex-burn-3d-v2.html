@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>EX-BURN · 3D Voodoo Doll</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#050508;}
+#c{display:block;position:fixed;inset:0;width:100%!important;height:100%!important;}
+
+/* ─── HUD TOP ─── */
+#hud-top{
+  position:fixed;top:0;left:0;right:0;z-index:20;
+  padding:14px 18px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(to bottom,rgba(3,3,8,0.98) 60%,transparent);
+}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:#ff1a8c;text-shadow:0 0 18px #ff1a8c88;}
+.logo em{color:#39ff14;font-style:normal;text-shadow:0 0 18px #39ff1488;}
+.kc-wrap{display:flex;align-items:center;gap:7px;background:rgba(10,5,20,0.9);border:1px solid #2a0a3a;border-radius:20px;padding:5px 14px;}
+.kc-icon{width:20px;height:20px;border-radius:50%;background:#f0b429;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#3a2000;animation:spin 3s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.kc-label{font-size:9px;color:#888;font-family:'Space Mono',monospace;letter-spacing:0.5px;}
+.kc-val{font-size:14px;font-weight:700;color:#f0b429;font-family:'Space Mono',monospace;}
+
+/* ─── NAMEPLATE ─── */
+#nameplate{
+  position:fixed;top:68px;left:50%;transform:translateX(-50%);
+  text-align:center;z-index:20;pointer-events:none;
+}
+.exlabel{font-size:9px;color:#444;letter-spacing:2px;font-family:'Space Mono',monospace;text-transform:uppercase;}
+.exname{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;color:#e8e8e8;line-height:1;text-shadow:0 0 20px #ff1a8c44;}
+.combo-pill{
+  display:inline-block;margin-top:4px;
+  background:#ff1a8c;border-radius:20px;
+  padding:3px 14px;font-family:'Space Mono',monospace;
+  font-size:10px;font-weight:700;color:#fff;
+  letter-spacing:1px;
+  animation:combopulse 1.5s ease-in-out infinite;
+}
+@keyframes combopulse{0%,100%{box-shadow:0 0 8px #ff1a8c}50%{box-shadow:0 0 22px #ff1a8c,0 0 40px #ff1a8c44}}
+
+/* ─── DRAG HINT ─── */
+#draghint{
+  position:fixed;bottom:160px;left:50%;transform:translateX(-50%);
+  font-size:10px;color:#333;letter-spacing:1.5px;
+  font-family:'Space Mono',monospace;text-transform:uppercase;
+  z-index:5;transition:opacity 1.5s;pointer-events:none;
+}
+
+/* ─── ACTIONS ─── */
+#actions{
+  position:fixed;bottom:0;left:0;right:0;z-index:20;
+  padding:10px 14px 28px;
+  background:linear-gradient(to top,rgba(3,3,8,0.99) 70%,transparent);
+}
+.act-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;}
+.act-btn{
+  border-radius:14px;border:none;padding:12px 6px 10px;
+  cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:5px;position:relative;overflow:hidden;
+  font-family:'Space Mono',monospace;
+  transition:transform 0.12s,box-shadow 0.12s;
+}
+.act-btn:active{transform:scale(0.95);}
+.act-btn::before{content:'';position:absolute;inset:0;border-radius:14px;opacity:0;transition:opacity 0.2s;}
+.act-btn:hover::before{opacity:1;}
+.act-btn .aicon{font-size:20px;filter:drop-shadow(0 0 6px currentColor);}
+.act-btn .alabel{font-size:10px;font-weight:700;letter-spacing:0.5px;line-height:1.1;text-align:center;}
+.act-btn .acost{font-size:9px;opacity:0.6;}
+
+.btn-poke{
+  background:#0d1a0d;border:1.5px solid #39ff14;color:#39ff14;
+  box-shadow:0 0 12px #39ff1433,inset 0 0 20px #39ff1408;
+  animation:neonblink1 3s ease-in-out infinite;
+}
+.btn-poke::before{background:#39ff1411;}
+@keyframes neonblink1{0%,100%{box-shadow:0 0 12px #39ff1433,inset 0 0 20px #39ff1408}50%{box-shadow:0 0 22px #39ff1466,inset 0 0 30px #39ff1415}}
+
+.btn-burn{
+  background:#1a0d00;border:1.5px solid #ff8800;color:#ff8800;
+  box-shadow:0 0 12px #ff880033,inset 0 0 20px #ff880008;
+  animation:neonblink2 2.5s ease-in-out infinite;
+}
+.btn-burn::before{background:#ff880011;}
+@keyframes neonblink2{0%,100%{box-shadow:0 0 12px #ff880033}50%{box-shadow:0 0 24px #ff880077}}
+
+.btn-curse{
+  background:#12001a;border:1.5px solid #cc00ff;color:#cc00ff;
+  box-shadow:0 0 12px #cc00ff33,inset 0 0 20px #cc00ff08;
+  animation:neonblink3 3.5s ease-in-out infinite;
+}
+.btn-curse::before{background:#cc00ff11;}
+@keyframes neonblink3{0%,100%{box-shadow:0 0 12px #cc00ff33}50%{box-shadow:0 0 26px #cc00ff77}}
+
+.info-strip{display:flex;justify-content:center;gap:10px;}
+.info-chip{background:rgba(15,10,25,0.9);border:1px solid #222;border-radius:20px;padding:3px 12px;font-size:10px;color:#555;font-family:'Space Mono',monospace;}
+.info-chip b{color:#e8e8e8;}
+
+/* ─── TRANSFORM OVERLAY ─── */
+#transform-overlay{
+  position:fixed;inset:0;z-index:50;
+  background:#050508;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+}
+#transform-overlay.show{display:flex;}
+#transform-canvas{width:240px;height:240px;border-radius:120px;border:2px solid #ff1a8c;margin-bottom:20px;box-shadow:0 0 40px #ff1a8c44;}
+#transform-status{
+  font-family:'Bebas Neue',sans-serif;font-size:28px;
+  letter-spacing:3px;color:#ff1a8c;
+  text-shadow:0 0 20px #ff1a8c;
+  animation:glitch 0.5s infinite;
+  margin-bottom:6px;
+}
+@keyframes glitch{
+  0%,90%,100%{transform:none;clip-path:none}
+  92%{transform:translateX(-2px);clip-path:rect(10px 400px 30px 0)}
+  94%{transform:translateX(2px);clip-path:rect(50px 400px 70px 0)}
+}
+#transform-sub{font-size:11px;color:#555;font-family:'Space Mono',monospace;letter-spacing:1px;}
+.upload-btn{
+  margin-top:18px;background:transparent;border:1.5px solid #ff1a8c;
+  border-radius:12px;padding:12px 28px;color:#ff1a8c;
+  font-family:'Space Mono',monospace;font-size:12px;font-weight:700;
+  letter-spacing:1px;cursor:pointer;transition:all 0.2s;
+}
+.upload-btn:hover{background:#ff1a8c22;box-shadow:0 0 20px #ff1a8c44;}
+
+/* ─── TOAST ─── */
+#toast{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(5,5,12,0.97);border:1px solid #2a1a3a;
+  border-radius:16px;padding:16px 22px;max-width:300px;width:90%;
+  text-align:center;z-index:40;opacity:0;pointer-events:none;
+  transition:opacity 0.25s;
+  box-shadow:0 0 30px #ff1a8c22;
+}
+#toast.show{opacity:1;}
+#toast-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:#ff1a8c;margin-bottom:5px;text-shadow:0 0 15px #ff1a8c88;}
+#toast-text{font-size:11px;color:#888;line-height:1.6;font-family:'Space Mono',monospace;}
+
+/* ─── EFFECT FLASH ─── */
+#bigfx{
+  position:fixed;top:40%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Bebas Neue',sans-serif;font-size:80px;letter-spacing:6px;
+  opacity:0;pointer-events:none;z-index:30;
+  text-shadow:0 0 40px currentColor,0 0 80px currentColor;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<!-- HUD -->
+<div id="hud-top">
+  <div class="logo">EX<em>-BURN</em></div>
+  <div class="kc-wrap">
+    <div class="kc-icon">K</div>
+    <div>
+      <div class="kc-label">KARMA CREDIT</div>
+      <div class="kc-val" id="kc-val">1000 HUF</div>
+    </div>
+  </div>
+</div>
+
+<div id="nameplate">
+  <div class="exlabel">currently burning</div>
+  <div class="exname" id="ex-name">EX-LOVER #001</div>
+  <div class="combo-pill" id="combo-pill">✦ x3 COMBO ✦</div>
+</div>
+
+<div id="draghint">↔ drag to rotate · pinch to zoom ↔</div>
+
+<div id="actions">
+  <div class="act-row">
+    <button class="act-btn btn-poke" onclick="doAction('poke')">
+      <div class="aicon">🪡</div>
+      <div class="alabel">POKE HIS EGO</div>
+      <div class="acost">500 HUF</div>
+    </button>
+    <button class="act-btn btn-burn" onclick="doAction('burn')">
+      <div class="aicon">🔥</div>
+      <div class="alabel">TOTAL BURN</div>
+      <div class="acost">1000 HUF</div>
+    </button>
+    <button class="act-btn btn-curse" onclick="doAction('curse')">
+      <div class="aicon">🔮</div>
+      <div class="alabel">KARMA CURSE</div>
+      <div class="acost">1500 HUF</div>
+    </button>
+  </div>
+  <div class="info-strip">
+    <div class="info-chip">Streak: <b id="streak-val">7 days</b></div>
+    <div class="info-chip">Combo: <b id="combo-val">x3</b></div>
+    <input type="file" id="file-inp" accept="image/*" style="display:none" onchange="startTransform(this)">
+    <div class="info-chip" onclick="document.getElementById('file-inp').click()" style="cursor:pointer;border-color:#ff1a8c44;color:#ff1a8c;">⬆ Upload ex photo</div>
+  </div>
+</div>
+
+<!-- TRANSFORM OVERLAY -->
+<div id="transform-overlay">
+  <canvas id="transform-canvas" width="240" height="240"></canvas>
+  <div id="transform-status">EXTRACTING LIES...</div>
+  <div id="transform-sub">analyzing facial structure</div>
+  <button class="upload-btn" onclick="document.getElementById('transform-overlay').classList.remove('show')">← Back to doll</button>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><div id="toast-title"></div><div id="toast-text"></div></div>
+<div id="bigfx"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ════════════════════════════════
+   STATE
+════════════════════════════════ */
+let kc = 1000, combo = 3, toastTmr = null, frame = 0;
+const DEFS = {
+  poke:  {cost:500,  label:'POKE!',  color:'#39ff14', title:'POKE landed! 🪡', text:"Kyle's Wi-Fi just dropped during a presentation."},
+  burn:  {cost:1000, label:'BURN!',  color:'#ff8800', title:'TOTAL BURN! 🔥',  text:"Spectral fire ignited. Kyle's ex just texted him."},
+  curse: {cost:1500, label:'CURSE!', color:'#cc00ff', title:'KARMA CURSE! 🔮', text:"The Grimoire accepted your offering. 40 days of autocorrect chaos."}
+};
+
+/* ════════════════════════════════
+   THREE.JS INIT
+════════════════════════════════ */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:false});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.5));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+renderer.setClearColor(0x050508);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x050508, 0.05);
+
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+camera.position.set(0, 0.4, 7.5);
+
+function resize(){
+  const w=window.innerWidth,h=window.innerHeight;
+  renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+resize(); window.addEventListener('resize',resize);
+
+/* ════════════════════════════════
+   TEXTURE GENERATORS
+════════════════════════════════ */
+function makeBurlap(size=512){
+  const cv=document.createElement('canvas');cv.width=cv.height=size;
+  const ctx=cv.getContext('2d');
+  // base
+  ctx.fillStyle='#7a5230';ctx.fillRect(0,0,size,size);
+  // warp threads (vertical)
+  for(let x=0;x<size;x+=3){
+    const bright=0.7+Math.random()*0.6;
+    ctx.strokeStyle=`rgba(${Math.round(80+Math.random()*40)},${Math.round(55+Math.random()*25)},${Math.round(20+Math.random()*20)},0.35)`;
+    ctx.lineWidth=1.5+Math.random();
+    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+Math.random()*1.5,size);ctx.stroke();
+  }
+  // weft threads (horizontal)
+  for(let y=0;y<size;y+=3){
+    ctx.strokeStyle=`rgba(${Math.round(60+Math.random()*50)},${Math.round(40+Math.random()*30)},${Math.round(15+Math.random()*20)},0.3)`;
+    ctx.lineWidth=1.2+Math.random();
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(size,y+Math.random()*1.5);ctx.stroke();
+  }
+  // knot highlights
+  ctx.globalAlpha=0.12;
+  for(let i=0;i<size*size/60;i++){
+    const x=Math.random()*size,y=Math.random()*size,r=0.8+Math.random()*1.2;
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=Math.random()>0.5?'#fff':'#000';ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  const t=new THREE.CanvasTexture(cv);
+  t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(4,4);
+  return t;
+}
+function makeBurlapNormal(size=256){
+  const cv=document.createElement('canvas');cv.width=cv.height=size;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#8080ff';ctx.fillRect(0,0,size,size);
+  for(let x=0;x<size;x+=3){
+    ctx.strokeStyle=x%6===0?'rgba(60,60,200,0.5)':'rgba(120,120,255,0.4)';
+    ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,size);ctx.stroke();
+  }
+  for(let y=0;y<size;y+=3){
+    ctx.strokeStyle=y%6===0?'rgba(60,60,200,0.4)':'rgba(100,100,220,0.3)';
+    ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(size,y);ctx.stroke();
+  }
+  const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(4,4);return t;
+}
+function makeEmojiTex(emoji,size=64){
+  const cv=document.createElement('canvas');cv.width=cv.height=size;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#ff8800';ctx.beginPath();ctx.arc(size/2,size/2,size/2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ff6600';ctx.beginPath();ctx.arc(size/2,size/2,size/2-2,0,Math.PI*2);ctx.fill();
+  ctx.font=`${size*0.56}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(emoji,size/2,size/2+2);
+  return new THREE.CanvasTexture(cv);
+}
+function makeButtonTex(color='#888888',size=64){
+  const cv=document.createElement('canvas');cv.width=cv.height=size;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle=color;ctx.beginPath();ctx.arc(size/2,size/2,size/2-1,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.4)';ctx.lineWidth=2;ctx.stroke();
+  // rim
+  ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc(size/2,size/2,size/2-4,0,Math.PI*2);ctx.stroke();
+  // 4 holes
+  const holes=[[size*0.38,size*0.38],[size*0.62,size*0.38],[size*0.38,size*0.62],[size*0.62,size*0.62]];
+  holes.forEach(([x,y])=>{
+    ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.6)';ctx.lineWidth=0.5;ctx.stroke();
+  });
+  return new THREE.CanvasTexture(cv);
+}
+function makePatchTex(color='#ff1a8c',size=128){
+  const cv=document.createElement('canvas');cv.width=cv.height=size;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle=color+'33';ctx.fillRect(0,0,size,size);
+  // stitching border
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash([5,4]);
+  ctx.strokeRect(6,6,size-12,size-12);
+  // cross pattern
+  ctx.globalAlpha=0.2;ctx.setLineDash([]);
+  for(let i=0;i<size;i+=12){
+    ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,size);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(size,i);ctx.stroke();
+  }
+  return new THREE.CanvasTexture(cv);
+}
+function makeLabelTex(){
+  const cv=document.createElement('canvas');cv.width=220;cv.height=90;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#f5f0e8';ctx.fillRect(0,0,220,90);
+  ctx.strokeStyle='#c8b880';ctx.lineWidth=2;ctx.strokeRect(3,3,214,84);
+  // inner border
+  ctx.strokeStyle='#e0d0a0';ctx.lineWidth=1;ctx.setLineDash([4,3]);ctx.strokeRect(8,8,204,74);
+  ctx.setLineDash([]);
+  ctx.fillStyle='#cc1040';ctx.font="bold 28px 'Space Mono',monospace";
+  ctx.textAlign='center';ctx.fillText('EX-LOVER',110,38);
+  ctx.fillStyle='#222';ctx.font="bold 22px 'Space Mono',monospace";
+  ctx.fillText('#001',110,68);
+  return new THREE.CanvasTexture(cv);
+}
+
+const burlapTex=makeBurlap();
+const normalTex=makeBurlapNormal();
+
+function matBurlap(col=0x7a5230,emis=0x000000,emisI=0){
+  return new THREE.MeshStandardMaterial({
+    map:burlapTex,normalMap:normalTex,
+    normalScale:new THREE.Vector2(2,2),
+    color:col,roughness:0.96,metalness:0,
+    emissive:emis,emissiveIntensity:emisI
+  });
+}
+
+/* ════════════════════════════════
+   DOLL ASSEMBLY
+════════════════════════════════ */
+const dollGroup = new THREE.Group();
+scene.add(dollGroup);
+
+const matBody = matBurlap(0x7a5230);
+const matNeck = matBurlap(0x6a4420);
+const matHead = matBurlap(0x7a5230);
+const allBurlapMats = [matBody,matNeck,matHead];
+
+// ── BODY ──
+const body = new THREE.Mesh(new THREE.CylinderGeometry(0.58,0.50,1.9,12,3,false),matBody);
+body.castShadow=true;dollGroup.add(body);
+
+// ── NECK ──
+const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.28,0.38,10),matNeck);
+neck.position.y=1.06;neck.castShadow=true;dollGroup.add(neck);
+
+// ── HEAD (slightly elongated) ──
+const head = new THREE.Mesh(new THREE.SphereGeometry(0.76,18,16),matHead);
+head.scale.set(0.95,1.05,0.92);
+head.position.y=1.99;head.castShadow=true;dollGroup.add(head);
+allBurlapMats.push(matHead);
+
+// ── ARMS ──
+function buildArm(side){
+  const g=new THREE.Group();
+  const upper=new THREE.Mesh(new THREE.CylinderGeometry(0.155,0.14,1.1,10),matBurlap(0x7a5230));
+  upper.castShadow=true;
+  const elbow=new THREE.Mesh(new THREE.SphereGeometry(0.165,8,8),matBurlap(0x6a4420));
+  elbow.position.y=-0.6;
+  const lower=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.11,1.0,10),matBurlap(0x7a5230));
+  lower.position.y=-1.15;lower.castShadow=true;
+  const hand=new THREE.Mesh(new THREE.SphereGeometry(0.14,8,8),matBurlap(0x6a4420));
+  hand.position.y=-1.66;
+  g.add(upper,elbow,lower,hand);
+  g.position.set(side*0.68,0.3,0);
+  g.rotation.z=side*(Math.PI/2+0.3);
+  return g;
+}
+dollGroup.add(buildArm(1),buildArm(-1));
+
+// ── LEGS ──
+function buildLeg(side){
+  const g=new THREE.Group();
+  const upper=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.17,1.1,10),matBurlap(0x7a5230));upper.castShadow=true;
+  const knee=new THREE.Mesh(new THREE.SphereGeometry(0.19,8,8),matBurlap(0x6a4420));knee.position.y=-0.6;
+  const lower=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.13,1.0,10),matBurlap(0x7a5230));lower.position.y=-1.15;lower.castShadow=true;
+  const foot=new THREE.Mesh(new THREE.SphereGeometry(0.16,8,8),matBurlap(0x6a4420));foot.position.y=-1.66;foot.scale.set(1.2,0.7,1.4);
+  g.add(upper,knee,lower,foot);
+  g.position.set(side*0.3,-1.28,0);
+  return g;
+}
+dollGroup.add(buildLeg(1),buildLeg(-1));
+
+// ── BUTTON EYES ──
+function buildEye(side){
+  const g=new THREE.Group();
+  const btnTex=makeButtonTex(side>0?'#33aa33':'#aa3333');
+  const btn=new THREE.Mesh(
+    new THREE.SphereGeometry(0.155,12,12),
+    new THREE.MeshStandardMaterial({map:btnTex,roughness:0.25,metalness:0.1})
+  );
+  // x-stitch thread lines
+  const xMat=new THREE.LineBasicMaterial({color:0xff1a8c,linewidth:2});
+  const xPts1=[new THREE.Vector3(-0.1,-0.1,0.18),new THREE.Vector3(0.1,0.1,0.18)];
+  const xPts2=[new THREE.Vector3(0.1,-0.1,0.18),new THREE.Vector3(-0.1,0.1,0.18)];
+  g.add(btn,
+    new THREE.Line(new THREE.BufferGeometry().setFromPoints(xPts1),xMat),
+    new THREE.Line(new THREE.BufferGeometry().setFromPoints(xPts2),xMat)
+  );
+  g.position.set(side*0.3,2.06,0.67);
+  return g;
+}
+dollGroup.add(buildEye(1),buildEye(-1));
+
+// ── WIRE GLASSES ──
+function buildGlasses(){
+  const g=new THREE.Group();
+  const wireMat=new THREE.MeshStandardMaterial({color:0xaaaaaa,roughness:0.1,metalness:0.95});
+  // left lens frame
+  const leftFrame=new THREE.Mesh(new THREE.TorusGeometry(0.23,0.018,8,20),wireMat);
+  leftFrame.position.set(-0.3,2.07,0.72);leftFrame.scale.set(1,0.85,0.6);
+  // right lens frame
+  const rightFrame=new THREE.Mesh(new THREE.TorusGeometry(0.23,0.018,8,20),wireMat);
+  rightFrame.position.set(0.3,2.07,0.72);rightFrame.scale.set(1,0.85,0.6);
+  // bridge
+  const bPts=[new THREE.Vector3(-0.07,2.07,0.73),new THREE.Vector3(0.07,2.07,0.73)];
+  const bridge=new THREE.Line(new THREE.BufferGeometry().setFromPoints(bPts),new THREE.LineBasicMaterial({color:0x999999,linewidth:2}));
+  // temples
+  const tL=[new THREE.Vector3(-0.53,2.07,0.73),new THREE.Vector3(-0.75,2.05,0.4)];
+  const tR=[new THREE.Vector3(0.53,2.07,0.73),new THREE.Vector3(0.75,2.05,0.4)];
+  g.add(leftFrame,rightFrame,bridge,
+    new THREE.Line(new THREE.BufferGeometry().setFromPoints(tL),new THREE.LineBasicMaterial({color:0x999999,linewidth:2})),
+    new THREE.Line(new THREE.BufferGeometry().setFromPoints(tR),new THREE.LineBasicMaterial({color:0x999999,linewidth:2}))
+  );
+  return g;
+}
+dollGroup.add(buildGlasses());
+
+// ── NOSE ──
+const nosePts=[new THREE.Vector3(-0.1,1.86,0.74),new THREE.Vector3(0,1.77,0.76),new THREE.Vector3(0.1,1.86,0.74)];
+dollGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(nosePts),new THREE.LineBasicMaterial({color:0x4a2c10,linewidth:3})));
+
+// ── MOUTH — frown stitch ──
+const mouthPts=[];
+for(let i=0;i<=14;i++){const t=i/14,a=Math.PI+t*Math.PI;mouthPts.push(new THREE.Vector3(Math.cos(a)*0.24,Math.sin(a)*0.09+1.61,0.73));}
+dollGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(mouthPts),new THREE.LineBasicMaterial({color:0x2a1508,linewidth:3})));
+
+// ── CURLY HAIR (dreadlock-style) ──
+function buildCurlyHair(){
+  const g=new THREE.Group();
+  const colors=[0xff1a8c,0xcc0070,0xff44aa,0x7a5230,0x8b6340,0x9a7250];
+  // top curls
+  for(let i=0;i<22;i++){
+    const angle=(i/22)*Math.PI*2;
+    const r=0.3+Math.random()*0.45;
+    const baseX=Math.sin(angle)*r*0.75;
+    const baseZ=Math.cos(angle)*r*0.75;
+    const baseY=2.0+Math.random()*0.4;
+    const length=0.5+Math.random()*0.7;
+    const curlRadius=0.04+Math.random()*0.06;
+    const color=colors[Math.floor(Math.random()*colors.length)];
+    const pts=[];
+    for(let j=0;j<=20;j++){
+      const t=j/20;
+      const curlAngle=t*Math.PI*3;
+      pts.push(new THREE.Vector3(
+        baseX+Math.sin(curlAngle+angle)*curlRadius*(1-t*0.3),
+        baseY+t*length+Math.cos(curlAngle)*curlRadius*0.5,
+        baseZ+Math.cos(curlAngle+angle)*curlRadius*(1-t*0.3)
+      ));
+    }
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,linewidth:2+Math.random()})));
+  }
+  // side hanging strands
+  for(let side=-1;side<=1;side+=2){
+    for(let i=0;i<7;i++){
+      const startX=side*(0.55+Math.random()*0.2);
+      const startY=2.1-i*0.12;
+      const pts=[];
+      for(let j=0;j<=12;j++){
+        const t=j/12;
+        const curl=Math.sin(t*Math.PI*2+i)*0.06;
+        pts.push(new THREE.Vector3(startX+curl,startY-t*0.55,0.3+Math.random()*0.15));
+      }
+      const color=colors[Math.floor(Math.random()*3)];
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,linewidth:2})));
+    }
+  }
+  return g;
+}
+dollGroup.add(buildCurlyHair());
+
+// ── BEARD ──
+function buildBeard(){
+  const g=new THREE.Group();
+  for(let i=0;i<12;i++){
+    const x=-0.26+i*0.047;
+    const startY=1.68;
+    const pts=[];
+    for(let j=0;j<=10;j++){
+      const t=j/10;
+      pts.push(new THREE.Vector3(x+Math.sin(t*Math.PI*2+i)*0.025,startY-t*0.36,0.73-t*0.06));
+    }
+    const c=i%3===0?0x8b6340:i%3===1?0x7a5230:0x9a7250;
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:c,linewidth:2})));
+  }
+  return g;
+}
+dollGroup.add(buildBeard());
+
+// ── NEON COLLAR / NECK BAND ──
+function addNeonBand(y,color,radius=0.31){
+  const pts=[];
+  for(let i=0;i<=32;i++){const a=(i/32)*Math.PI*2;pts.push(new THREE.Vector3(Math.sin(a)*radius,y,Math.cos(a)*radius));}
+  const band=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,linewidth:3}));
+  dollGroup.add(band);
+}
+addNeonBand(1.02,0x39ff14,0.3); // neck green
+addNeonBand(1.08,0xff1a8c,0.28);
+addNeonBand(-0.92,0xff1a8c,0.53); // waist
+addNeonBand(-0.96,0x39ff14,0.51);
+
+// ── NEON WRIST BANDS ──
+function addWristBand(armSide,color){
+  const pts=[];
+  const cx=armSide*1.0,cy=-0.22;
+  for(let i=0;i<=16;i++){const a=(i/16)*Math.PI*2;pts.push(new THREE.Vector3(cx+Math.cos(a)*0.13,cy,Math.sin(a)*0.13));}
+  dollGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,linewidth:3})));
+}
+addWristBand(1.55,0xbf00ff);addWristBand(-1.55,0xff8800);
+
+// ── NEON PATCHES ──
+function addPatch(x,y,z,w,h,color,rotY=0){
+  const tex=makePatchTex(color);
+  const mesh=new THREE.Mesh(
+    new THREE.PlaneGeometry(w,h),
+    new THREE.MeshStandardMaterial({map:tex,transparent:true,opacity:0.9,roughness:0.8,side:THREE.DoubleSide})
+  );
+  mesh.position.set(x,y,z);mesh.rotation.y=rotY;dollGroup.add(mesh);
+}
+addPatch(-0.15,0.1,0.59,0.38,0.38,0xff1a8c); // left chest patch
+addPatch(0.18,-0.3,0.56,0.28,0.28,0x39ff14); // right belly patch
+addPatch(0.1,0.4,0.59,0.22,0.22,0xbf00ff);   // upper right
+addPatch(-0.2,-0.55,0.52,0.32,0.32,0xff8800); // lower left
+
+// ── X STITCHES ──
+function addX(x,y,z,s=0.12,color=0xff1a8c){
+  const m=new THREE.LineBasicMaterial({color,linewidth:2});
+  dollGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x-s,y-s,z),new THREE.Vector3(x+s,y+s,z)]),m));
+  dollGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x+s,y-s,z),new THREE.Vector3(x-s,y+s,z)]),m));
+}
+addX(-0.15,0.1,0.61,0.14,0xff1a8c);addX(0.18,-0.3,0.58,0.1,0x39ff14);
+addX(-0.3,0.55,0.54,0.09,0xbf00ff);addX(0.3,-0.05,0.55,0.09,0xff8800);
+
+// ── BODY SEAM (dashed) ──
+function dashedLine(pts,color){
+  const m=new THREE.LineDashedMaterial({color,linewidth:1,dashSize:0.07,gapSize:0.05});
+  const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),m);l.computeLineDistances();dollGroup.add(l);
+}
+const seamV=[];for(let i=0;i<=12;i++){const t=i/12;seamV.push(new THREE.Vector3(0.59-t*0.09,-0.95+t*2.0,0));}
+dashedLine(seamV,0xff1a8c);
+const seamH=[];for(let i=0;i<=20;i++){const a=(i/20)*Math.PI*2;seamH.push(new THREE.Vector3(Math.cos(a)*0.59,-0.1,Math.sin(a)*0.59));}
+dashedLine(seamH,0x39ff14);
+
+// ── EMOJI PINS ──
+const emojiPins=[
+  {emoji:'😤',pos:[0.28,0.55,0.61],color:0xff4400},
+  {emoji:'😢',pos:[-0.35,0.0,0.58],color:0xff1a8c},
+  {emoji:'😡',pos:[0.42,-0.25,0.51],color:0xff6600},
+  {emoji:'🥺',pos:[-0.1,-0.7,0.53],color:0xbf00ff},
+  {emoji:'😤',pos:[0.0,0.85,0.61],color:0xff8800},
+];
+emojiPins.forEach(({emoji,pos,color})=>{
+  const g=new THREE.Group();
+  const headTex=makeEmojiTex(emoji,80);
+  const pinHead=new THREE.Mesh(new THREE.SphereGeometry(0.085,10,10),new THREE.MeshStandardMaterial({map:headTex,roughness:0.2,metalness:0.1,emissive:color,emissiveIntensity:0.15}));
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.008,0.55,6),new THREE.MeshStandardMaterial({color:0xc0c0c0,roughness:0.05,metalness:0.95}));
+  shaft.position.y=-0.29;
+  g.add(pinHead,shaft);
+  g.position.set(...pos);g.rotation.x=0.35;
+  dollGroup.add(g);
+});
+
+// ── KEY NECKLACE ──
+function buildKey(){
+  const g=new THREE.Group();
+  const keyMat=new THREE.MeshStandardMaterial({color:0xc8a000,roughness:0.2,metalness:0.9});
+  const keyHead=new THREE.Mesh(new THREE.TorusGeometry(0.06,0.018,6,12),keyMat);
+  const keyShaft=new THREE.Mesh(new THREE.BoxGeometry(0.016,0.22,0.016),keyMat);
+  keyShaft.position.y=-0.14;
+  const teeth1=new THREE.Mesh(new THREE.BoxGeometry(0.045,0.03,0.016),keyMat);teeth1.position.set(0.02,-0.22,0);
+  const teeth2=new THREE.Mesh(new THREE.BoxGeometry(0.035,0.03,0.016),keyMat);teeth2.position.set(0.015,-0.29,0);
+  g.add(keyHead,keyShaft,teeth1,teeth2);
+  g.position.set(0.06,0.72,0.62);g.rotation.z=0.3;
+  dollGroup.add(g);
+  // chain
+  const chainPts=[];
+  for(let i=0;i<=24;i++){const t=i/24;const a=Math.PI+t*Math.PI;chainPts.push(new THREE.Vector3(Math.cos(a)*0.42,0.82+Math.sin(a)*0.08,0.55));}
+  const chain=new THREE.Line(new THREE.BufferGeometry().setFromPoints(chainPts),new THREE.LineBasicMaterial({color:0xc8a000,linewidth:2}));
+  dollGroup.add(chain);
+}
+buildKey();
+
+// ── LABEL TAG ──
+const labelTex=makeLabelTex();
+const label=new THREE.Mesh(new THREE.PlaneGeometry(0.5,0.2),new THREE.MeshStandardMaterial({map:labelTex,roughness:0.6,side:THREE.DoubleSide}));
+label.position.set(0.12,-0.05,0.62);label.rotation.z=0.08;dollGroup.add(label);
+
+// ── GOLD BUTTON ON BODY ──
+const goldBtn=new THREE.Mesh(new THREE.SphereGeometry(0.1,10,10),new THREE.MeshStandardMaterial({color:0xc8a000,roughness:0.15,metalness:0.9}));
+goldBtn.position.set(-0.02,-0.38,0.59);dollGroup.add(goldBtn);
+
+// ── SHADOW PLANE ──
+const shadowP=new THREE.Mesh(new THREE.CircleGeometry(4,32),new THREE.MeshStandardMaterial({color:0x050508,roughness:1}));
+shadowP.rotation.x=-Math.PI/2;shadowP.position.y=-2.95;shadowP.receiveShadow=true;scene.add(shadowP);
+
+/* ════════════════════════════════
+   LIGHTS
+════════════════════════════════ */
+scene.add(new THREE.AmbientLight(0x111114,1.0));
+
+const keyL=new THREE.DirectionalLight(0xfff4e0,2.8);
+keyL.position.set(4,7,5);keyL.castShadow=true;
+keyL.shadow.mapSize.set(2048,2048);
+scene.add(keyL);
+
+const rimL=new THREE.DirectionalLight(0xff1a8c,1.8);
+rimL.position.set(-5,2,-3);scene.add(rimL);
+
+const fillL=new THREE.DirectionalLight(0x000833,1.0);
+fillL.position.set(0,-4,3);scene.add(fillL);
+
+const pinkPt=new THREE.PointLight(0xff1a8c,0.2,8);pinkPt.position.set(2,2,3);scene.add(pinkPt);
+const greenPt=new THREE.PointLight(0x39ff14,0.0,6);greenPt.position.set(-2,1,3);scene.add(greenPt);
+const purplePt=new THREE.PointLight(0xbf00ff,0.0,6);purplePt.position.set(0,3,3);scene.add(purplePt);
+const burnPt=new THREE.PointLight(0xff6600,0.0,6);burnPt.position.set(0,-1,3);scene.add(burnPt);
+
+/* ════════════════════════════════
+   PARTICLES
+════════════════════════════════ */
+const NPAR=600;
+const pPos=new Float32Array(NPAR*3);
+const pCol=new Float32Array(NPAR*3);
+const pSiz=new Float32Array(NPAR);
+const pVel=Array.from({length:NPAR},()=>({x:0,y:0,z:0,life:0,maxLife:1,active:false}));
+for(let i=0;i<NPAR;i++)pPos[i*3+1]=-100;
+const pGeo=new THREE.BufferGeometry();
+pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+pGeo.setAttribute('color',new THREE.BufferAttribute(pCol,3));
+pGeo.setAttribute('size',new THREE.BufferAttribute(pSiz,1));
+const pMat=new THREE.PointsMaterial({size:0.14,vertexColors:true,transparent:true,opacity:0.9,sizeAttenuation:true,depthWrite:false,blending:THREE.AdditiveBlending});
+scene.add(new THREE.Points(pGeo,pMat));
+let parActive=false,parType=null,parAge=0;
+
+const PCOLORS={
+  poke:[[0.22,1,0.08],[0.3,0.9,0.1],[0.5,1,0.3]],
+  burn:[[1,0.5,0],[1,0.3,0],[1,0.8,0],[1,1,0.2]],
+  curse:[[0.75,0,1],[0.5,0,0.8],[1,0.2,1],[0.8,0,0.9]]
+};
+
+function spawnPar(type){
+  parType=type;parActive=true;parAge=0;
+  const cols=PCOLORS[type]||PCOLORS.poke;
+  for(let i=0;i<NPAR;i++){
+    const v=pVel[i];v.active=true;v.life=0;v.maxLife=50+Math.random()*80;
+    v.x=(Math.random()-0.5)*(type==='curse'?0.5:0.3);
+    v.y=type==='burn'?0.06+Math.random()*0.12:( Math.random()-0.5)*0.1;
+    v.z=(Math.random()-0.5)*(type==='curse'?0.5:0.3);
+    const sy=type==='burn'?-1.5+Math.random()*3.5:-0.5+Math.random()*3;
+    pPos[i*3]=(Math.random()-0.5)*1.2;pPos[i*3+1]=sy;pPos[i*3+2]=(Math.random()-0.5)*1.2;
+    pSiz[i]=0.06+Math.random()*0.18;
+    const c=cols[Math.floor(Math.random()*cols.length)];
+    pCol[i*3]=c[0];pCol[i*3+1]=c[1];pCol[i*3+2]=c[2];
+  }
+  pGeo.attributes.position.needsUpdate=true;
+  pGeo.attributes.color.needsUpdate=true;
+  pGeo.attributes.size.needsUpdate=true;
+}
+
+function tickPar(){
+  if(!parActive)return;
+  parAge++;
+  for(let i=0;i<NPAR;i++){
+    const v=pVel[i];if(!v.active)continue;
+    v.life++;
+    if(v.life>v.maxLife){pPos[i*3+1]=-100;v.active=false;continue;}
+    const t=v.life/v.maxLife;
+    pPos[i*3]+=v.x;pPos[i*3+1]+=v.y;pPos[i*3+2]+=v.z;
+    if(parType==='burn')v.y*=0.98;
+    if(parType==='curse'){pPos[i*3]+=Math.sin(v.life*0.25+i*0.1)*0.018;pPos[i*3+2]+=Math.cos(v.life*0.25+i*0.1)*0.018;}
+    pSiz[i]=Math.max(0,(1-t*t)*(0.06+Math.random()*0.14));
+  }
+  pGeo.attributes.position.needsUpdate=true;
+  pGeo.attributes.size.needsUpdate=true;
+  if(parAge>160){parActive=false;for(let i=0;i<NPAR;i++)pPos[i*3+1]=-100;pGeo.attributes.position.needsUpdate=true;}
+}
+
+/* ════════════════════════════════
+   DRAG / ZOOM
+════════════════════════════════ */
+let drag=false,px=0,py=0,rotX=0,rotY=0,rtX=0,rtY=0,camZ=7.5,camZT=7.5,pDist=0;
+document.addEventListener('mousedown',e=>{drag=true;px=e.clientX;py=e.clientY;});
+window.addEventListener('mouseup',()=>drag=false);
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;
+  rtY+=(e.clientX-px)*0.009;rtX+=(e.clientY-py)*0.007;
+  rtX=Math.max(-0.9,Math.min(0.9,rtX));px=e.clientX;py=e.clientY;
+  document.getElementById('draghint').style.opacity='0';
+});
+window.addEventListener('wheel',e=>{camZT+=e.deltaY*0.01;camZT=Math.max(4,Math.min(12,camZT));});
+document.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;document.getElementById('draghint').style.opacity='0';}
+  if(e.touches.length===2)pDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+},{passive:true});
+document.addEventListener('touchend',()=>drag=false,{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(e.touches.length===1&&drag){rtY+=(e.touches[0].clientX-px)*0.012;rtX+=(e.touches[0].clientY-py)*0.009;rtX=Math.max(-0.9,Math.min(0.9,rtX));px=e.touches[0].clientX;py=e.touches[0].clientY;}
+  if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);camZT+=(pDist-d)*0.025;camZT=Math.max(4,Math.min(12,camZT));pDist=d;}
+},{passive:true});
+
+/* ════════════════════════════════
+   ACTION LOGIC
+════════════════════════════════ */
+let shakeAmt=0;
+let flashActive=false,flashColor=new THREE.Color(),flashT=0;
+let ltTargets={pink:0.2,green:0,purple:0,burn:0};
+
+function doAction(type){
+  const d=DEFS[type];if(!d)return;
+  if(kc<d.cost){toast('Not enough Karma Credits!','Top up to continue the ritual. The spirits are waiting.');return;}
+  kc-=d.cost;combo++;
+  document.getElementById('kc-val').textContent=kc.toLocaleString()+' HUF';
+  document.getElementById('combo-pill').textContent='✦ x'+combo+' COMBO ✦';
+  document.getElementById('combo-val').textContent='x'+combo;
+  spawnPar(type);shakeAmt=0.4;
+  flashActive=true;flashT=0;flashColor.set(d.color);
+  if(type==='poke'){ltTargets.green=4;}
+  if(type==='burn'){ltTargets.burn=5;ltTargets.pink=3;keyL.color.set(0xff6600);}
+  if(type==='curse'){ltTargets.purple=6;}
+  showBigFx(d.label,d.color);
+  toast(d.title,d.text);
+  setTimeout(()=>{ltTargets={pink:0.2,green:0,purple:0,burn:0};keyL.color.set(0xfff4e0);},2000);
+}
+
+function toast(title,text){
+  document.getElementById('toast-title').textContent=title;
+  document.getElementById('toast-text').textContent=text;
+  const t=document.getElementById('toast');t.classList.add('show');
+  clearTimeout(toastTmr);toastTmr=setTimeout(()=>t.classList.remove('show'),3500);
+}
+function showBigFx(text,color){
+  const el=document.getElementById('bigfx');
+  el.textContent=text;el.style.color=color;el.style.textShadow=`0 0 40px ${color},0 0 80px ${color}`;
+  el.style.opacity='1';el.style.transition='none';
+  setTimeout(()=>{el.style.transition='opacity 0.7s';el.style.opacity='0';},500);
+}
+
+/* ════════════════════════════════
+   TRANSFORM ANIMATION
+════════════════════════════════ */
+const phases=[
+  'EXTRACTING LIES...',
+  'STITCHING EGO...',
+  'MAPPING RED FLAGS...',
+  'CURSING THE BURLAP...',
+  'FINALIZING DOLL...',
+  'RITUAL COMPLETE ✦'
+];
+const subs=['analyzing facial structure','detecting smug expressions','cataloguing bad decisions','applying neon thread','sewing in resentment','your ex-doll is ready'];
+let transformTimer=null,phaseIdx=0;
+
+function startTransform(input){
+  const file=input.files[0];if(!file)return;
+  const ovl=document.getElementById('transform-overlay');
+  ovl.classList.add('show');
+  phaseIdx=0;
+  const tcv=document.getElementById('transform-canvas');
+  const ctx=tcv.getContext('2d');
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      // draw photo
+      ctx.clearRect(0,0,240,240);
+      const ar=img.width/img.height;
+      let sw=240,sh=240;
+      if(ar>1){sh=240/ar;}else{sw=240*ar;}
+      ctx.save();ctx.beginPath();ctx.arc(120,120,118,0,Math.PI*2);ctx.clip();
+      ctx.drawImage(img,(240-sw)/2,(240-sh)/2,sw,sh);ctx.restore();
+      runPhases(ctx,img);
+    };img.src=ev.target.result;
+  };reader.readAsDataURL(file);
+  input.value='';
+}
+
+function runPhases(ctx,img){
+  clearInterval(transformTimer);phaseIdx=0;
+  transformTimer=setInterval(()=>{
+    document.getElementById('transform-status').textContent=phases[phaseIdx]||phases[phases.length-1];
+    document.getElementById('transform-sub').textContent=subs[phaseIdx]||'';
+    // draw stitch overlay effect on canvas
+    applyStitchEffect(ctx,phaseIdx);
+    phaseIdx++;
+    if(phaseIdx>=phases.length){
+      clearInterval(transformTimer);
+      // apply texture to doll
+      setTimeout(()=>applyPhotoToDoll(ctx),400);
+    }
+  },1400);
+}
+
+function applyStitchEffect(ctx,phase){
+  ctx.save();
+  const colors=['#ff1a8c','#39ff14','#bf00ff','#ff8800','#39ff14','#ff1a8c'];
+  const color=colors[phase%colors.length];
+  ctx.globalAlpha=0.15+phase*0.05;
+  // draw neon stitch lines
+  ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.setLineDash([4,6]);
+  for(let i=0;i<6;i++){
+    ctx.beginPath();ctx.moveTo(Math.random()*240,Math.random()*240);ctx.lineTo(Math.random()*240,Math.random()*240);ctx.stroke();
+  }
+  // burlap weave overlay
+  ctx.globalAlpha=0.08;ctx.strokeStyle='#7a5230';ctx.setLineDash([]);ctx.lineWidth=1;
+  for(let x=0;x<240;x+=4){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,240);ctx.stroke();}
+  for(let y=0;y<240;y+=4){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(240,y);ctx.stroke();}
+  ctx.restore();
+}
+
+function applyPhotoToDoll(ctx){
+  // update head texture with the photo
+  const photoTex=new THREE.CanvasTexture(document.getElementById('transform-canvas'));
+  const newMat=new THREE.MeshStandardMaterial({
+    map:photoTex,roughness:0.9,metalness:0,
+    normalMap:normalTex,normalScale:new THREE.Vector2(1.5,1.5),
+    color:0x8a6238
+  });
+  head.material=newMat;
+  // show success
+  document.getElementById('transform-status').textContent='RITUAL COMPLETE ✦';
+  document.getElementById('transform-sub').textContent='your voodoo doll is ready';
+  setTimeout(()=>{
+    document.getElementById('transform-overlay').classList.remove('show');
+    doAction('poke');
+  },1800);
+}
+
+/* ════════════════════════════════
+   RENDER LOOP
+════════════════════════════════ */
+function animate(){
+  requestAnimationFrame(animate);frame++;
+
+  // auto-rotate idle
+  if(!drag)rtY+=0.004;
+  rotX+=(rtX-rotX)*0.07;rotY+=(rtY-rotY)*0.07;
+  dollGroup.rotation.x=rotX;dollGroup.rotation.y=rotY;
+
+  // camera zoom
+  camZ+=(camZT-camZ)*0.07;camera.position.z=camZ;
+
+  // breathe
+  dollGroup.position.y=Math.sin(frame*0.017)*0.07;
+
+  // shake
+  if(shakeAmt>0.008){
+    dollGroup.position.x=(Math.random()-0.5)*shakeAmt;
+    shakeAmt*=0.83;
+  }else{dollGroup.position.x=0;shakeAmt=0;}
+
+  // emissive flash
+  if(flashActive){
+    flashT++;
+    const intensity=Math.max(0,1-flashT/30)*1.0;
+    allBurlapMats.forEach(m=>{m.emissive.copy(flashColor);m.emissiveIntensity=intensity;});
+    if(flashT>35){flashActive=false;allBurlapMats.forEach(m=>m.emissiveIntensity=0);}
+  }
+
+  // dynamic lights
+  pinkPt.intensity+=(ltTargets.pink-pinkPt.intensity)*0.1;
+  greenPt.intensity+=(ltTargets.green-greenPt.intensity)*0.1;
+  purplePt.intensity+=(ltTargets.purple-purplePt.intensity)*0.1;
+  burnPt.intensity+=(ltTargets.burn-burnPt.intensity)*0.1;
+  // ambient pulse
+  pinkPt.intensity+=Math.sin(frame*0.05)*0.04;
+
+  tickPar();
+  renderer.render(scene,camera);
+}
+animate();
+
+// fade drag hint
+setTimeout(()=>{document.getElementById('draghint').style.opacity='0';},5000);
+</script>
+</body>
+</html>
