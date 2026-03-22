@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>EX-BURN · Digital Revenge Ritual</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=VT323&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050508;--bg2:#0a0a10;--bg3:#111118;
+  --pink:#ff1a8c;--pink2:#cc0070;--green:#39ff14;--purple:#bf00ff;
+  --amber:#f0b429;--red:#ff3333;--blue:#00f0ff;
+  --text:#e8e8e8;--muted:#555;--border:#1e1e22;
+  --font-display:'Bebas Neue',sans-serif;
+  --font-mono:'Space Mono',monospace;
+  --font-vt:'VT323',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);}
+canvas#main-canvas{position:fixed;inset:0;width:100%!important;height:100%!important;}
+
+/* ══ NOISE OVERLAY ══ */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:1000;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  mix-blend-mode:overlay;
+}
+
+/* ══ SCREENS ══ */
+.screen{position:fixed;inset:0;display:none;flex-direction:column;z-index:10;}
+.screen.active{display:flex;}
+
+/* ══ GLITCH TEXT ══ */
+.glitch{position:relative;animation:glitchBase 4s infinite;}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;font-family:var(--font-display);}
+.glitch::before{color:var(--pink);animation:glitch1 4s infinite;clip-path:polygon(0 15%,100% 15%,100% 30%,0 30%);}
+.glitch::after{color:var(--green);animation:glitch2 4s infinite;clip-path:polygon(0 65%,100% 65%,100% 80%,0 80%);}
+@keyframes glitchBase{0%,89%,100%{transform:none}90%{transform:translateX(-1px)}92%{transform:translateX(2px)}94%{transform:none}}
+@keyframes glitch1{0%,88%,100%{transform:none;opacity:0}89%{transform:translateX(-3px);opacity:1}91%{transform:translateX(3px);opacity:0.8}93%{opacity:0}}
+@keyframes glitch2{0%,91%,100%{transform:none;opacity:0}92%{transform:translateX(3px);opacity:1}94%{transform:translateX(-3px);opacity:0.7}96%{opacity:0}}
+
+/* ══ TOP BAR ══ */
+#topbar{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  padding:12px 18px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(to bottom,rgba(5,5,8,0.98) 70%,transparent);
+}
+.logo{font-family:var(--font-display);font-size:32px;letter-spacing:3px;color:var(--pink);text-shadow:0 0 20px var(--pink),0 0 40px #ff1a8c44;}
+.logo em{color:var(--green);font-style:normal;text-shadow:0 0 20px var(--green);}
+.kc-wrap{
+  display:flex;align-items:center;gap:7px;
+  background:rgba(8,5,15,0.95);border:1px solid #2a1a3a;
+  border-radius:20px;padding:5px 14px;
+  box-shadow:0 0 12px #f0b42922;
+}
+.kc-icon{
+  width:22px;height:22px;border-radius:50%;background:var(--amber);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#3a2000;
+  animation:kcSpin 4s linear infinite;
+  box-shadow:0 0 8px var(--amber);
+}
+@keyframes kcSpin{0%{transform:rotateY(0)}50%{transform:rotateY(180deg)}100%{transform:rotateY(360deg)}}
+.kc-info{display:flex;flex-direction:column;gap:1px;}
+.kc-label{font-size:8px;color:#888;font-family:var(--font-mono);letter-spacing:0.5px;text-transform:uppercase;}
+.kc-val{font-size:15px;font-weight:700;color:var(--amber);font-family:var(--font-mono);line-height:1;}
+
+/* ══ NAMEPLATE ══ */
+#nameplate{
+  position:fixed;top:68px;left:50%;transform:translateX(-50%);
+  text-align:center;z-index:50;pointer-events:none;
+}
+.ex-label{font-family:var(--font-mono);font-size:9px;color:#444;letter-spacing:2px;text-transform:uppercase;}
+.ex-name{font-family:var(--font-display);font-size:28px;letter-spacing:3px;color:var(--text);line-height:1.1;text-shadow:0 0 15px #ff1a8c33;}
+.combo-strip{
+  display:flex;align-items:center;justify-content:center;gap:8px;margin-top:5px;
+}
+.combo-pill{
+  background:var(--pink);border-radius:20px;padding:3px 14px;
+  font-family:var(--font-mono);font-size:10px;font-weight:700;
+  color:#fff;letter-spacing:1px;
+  animation:comboPulse 2s ease-in-out infinite;
+  box-shadow:0 0 12px var(--pink);
+}
+@keyframes comboPulse{0%,100%{box-shadow:0 0 8px var(--pink)}50%{box-shadow:0 0 25px var(--pink),0 0 50px #ff1a8c44}}
+.streak-pill{
+  background:rgba(57,255,20,0.1);border:1px solid #39ff1444;
+  border-radius:20px;padding:3px 10px;
+  font-family:var(--font-mono);font-size:10px;color:var(--green);letter-spacing:0.5px;
+}
+
+/* ══ DAILY FREE POKE ══ */
+#daily-bar{
+  position:fixed;top:128px;left:14px;right:14px;z-index:50;
+  background:#0a1a0a;border:1px solid #1a3a1a;border-radius:10px;
+  padding:8px 14px;display:flex;align-items:center;gap:10px;
+  box-shadow:0 0 15px #39ff1411;
+}
+.daily-icon{font-size:18px;filter:drop-shadow(0 0 6px var(--green));}
+.daily-text{flex:1;}
+.daily-main{font-family:var(--font-mono);font-size:11px;color:var(--green);font-weight:700;}
+.daily-sub{font-size:9px;color:#3a5a3a;margin-top:1px;font-family:var(--font-mono);}
+.daily-btn{
+  background:#1a3a1a;border:1px solid #2a5a2a;border-radius:8px;
+  padding:5px 12px;color:var(--green);font-family:var(--font-mono);
+  font-size:10px;font-weight:700;cursor:pointer;letter-spacing:0.5px;
+  transition:all 0.15s;flex-shrink:0;
+}
+.daily-btn:hover{background:#2a4a2a;box-shadow:0 0 10px #39ff1433;}
+.daily-btn:disabled{opacity:0.3;cursor:default;}
+
+/* ══ DRAG HINT ══ */
+#drag-hint{
+  position:fixed;bottom:175px;left:50%;transform:translateX(-50%);
+  font-family:var(--font-mono);font-size:9px;color:#2a2a2a;
+  letter-spacing:2px;text-transform:uppercase;
+  z-index:50;transition:opacity 2s;pointer-events:none;
+}
+
+/* ══ ACTIONS ══ */
+#actions{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  padding:10px 12px 28px;
+  background:linear-gradient(to top,rgba(5,5,8,0.99) 80%,transparent);
+}
+.act-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;}
+.act-btn{
+  border:none;border-radius:14px;padding:12px 6px 10px;
+  cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:4px;position:relative;overflow:hidden;
+  font-family:var(--font-mono);transition:transform 0.1s;
+}
+.act-btn:active{transform:scale(0.93);}
+.act-btn .aicon{font-size:24px;filter:drop-shadow(0 0 8px currentColor);animation:iconBob 2s ease-in-out infinite;}
+@keyframes iconBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.act-btn .alabel{font-size:9px;font-weight:700;letter-spacing:0.3px;line-height:1.2;text-align:center;}
+.act-btn .aprice{font-size:8px;opacity:0.55;font-family:var(--font-mono);}
+.act-btn .akc{font-size:8px;opacity:0.4;}
+/* neon border flicker */
+.btn-poke{background:#091509;border:1.5px solid var(--green);color:var(--green);animation:flickerG 5s infinite;}
+.btn-burn{background:#150a00;border:1.5px solid #ff8800;color:#ff8800;animation:flickerA 4s infinite;}
+.btn-curse{background:#100018;border:1.5px solid var(--purple);color:var(--purple);animation:flickerP 6s infinite;}
+@keyframes flickerG{0%,95%,100%{box-shadow:0 0 10px #39ff1433}96%{box-shadow:0 0 0 transparent}97%{box-shadow:0 0 18px #39ff1466}98%{box-shadow:0 0 5px #39ff1422}}
+@keyframes flickerA{0%,93%,100%{box-shadow:0 0 10px #ff880033}94%{box-shadow:0 0 0 transparent}95.5%{box-shadow:0 0 20px #ff880066}}
+@keyframes flickerP{0%,97%,100%{box-shadow:0 0 10px #bf00ff33}98%{box-shadow:0 0 0 transparent}99%{box-shadow:0 0 22px #bf00ff66}}
+
+.act-bottom{display:flex;justify-content:center;gap:8px;}
+.info-chip{
+  background:rgba(10,10,18,0.9);border:1px solid #1e1e2a;
+  border-radius:20px;padding:4px 12px;
+  font-family:var(--font-mono);font-size:9px;color:var(--muted);
+}
+.info-chip b{color:var(--text);}
+.upload-chip{
+  background:rgba(255,26,140,0.08);border:1px solid #3a1a2a;
+  border-radius:20px;padding:4px 12px;
+  font-family:var(--font-mono);font-size:9px;color:var(--pink);
+  cursor:pointer;transition:all 0.15s;
+}
+.upload-chip:hover{background:rgba(255,26,140,0.15);box-shadow:0 0 10px #ff1a8c33;}
+
+/* ══ CURSE PICKER ══ */
+#curse-picker{
+  position:fixed;inset:0;z-index:60;background:rgba(0,0,0,0.92);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;
+}
+#curse-picker.show{display:flex;}
+.curse-title{
+  font-family:var(--font-display);font-size:36px;letter-spacing:3px;
+  color:var(--purple);text-shadow:0 0 20px var(--purple);
+  margin-bottom:6px;text-align:center;
+}
+.curse-sub{font-family:var(--font-mono);font-size:11px;color:#666;margin-bottom:20px;text-align:center;}
+.curse-card{
+  background:#0d0015;border:1.5px solid #3a1a4a;border-radius:14px;
+  padding:14px 18px;margin-bottom:10px;width:100%;max-width:340px;
+  cursor:pointer;transition:all 0.15s;
+}
+.curse-card:hover{border-color:var(--purple);box-shadow:0 0 20px #bf00ff33;transform:translateY(-2px);}
+.curse-name{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--purple);margin-bottom:4px;}
+.curse-desc{font-size:11px;color:#888;line-height:1.6;}
+.curse-price{font-family:var(--font-display);font-size:20px;color:var(--amber);margin-top:6px;}
+.curse-close{
+  margin-top:12px;background:transparent;border:1px solid #333;
+  border-radius:10px;padding:10px 28px;color:#555;
+  font-family:var(--font-mono);font-size:11px;cursor:pointer;
+  transition:all 0.15s;
+}
+.curse-close:hover{color:var(--text);border-color:#555;}
+
+/* ══ TRANSFORM OVERLAY ══ */
+#transform-overlay{
+  position:fixed;inset:0;z-index:70;background:var(--bg);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;
+}
+#transform-overlay.show{display:flex;}
+#transform-ring{
+  width:220px;height:220px;border-radius:50%;
+  border:2px solid #1a1a2a;position:relative;
+  display:flex;align-items:center;justify-content:center;
+}
+#transform-ring::before{
+  content:'';position:absolute;inset:-4px;border-radius:50%;
+  border:2px solid transparent;
+  border-top-color:var(--pink);border-right-color:var(--purple);
+  animation:ringSpinFast 0.8s linear infinite;
+}
+#transform-ring::after{
+  content:'';position:absolute;inset:-12px;border-radius:50%;
+  border:1px solid transparent;
+  border-bottom-color:var(--green);border-left-color:var(--amber);
+  animation:ringSpinSlow 2s linear infinite reverse;
+}
+@keyframes ringSpinFast{to{transform:rotate(360deg)}}
+@keyframes ringSpinSlow{to{transform:rotate(360deg)}}
+#transform-preview{
+  width:200px;height:200px;border-radius:50%;
+  object-fit:cover;display:none;
+}
+#transform-doll-svg{width:160px;height:200px;}
+.needle-anim{animation:needleStab 0.6s ease-in-out infinite alternate;}
+@keyframes needleStab{from{transform:translateX(-8px) rotate(-5deg)}to{transform:translateX(8px) rotate(5deg)}}
+.thread-anim{stroke-dasharray:300;animation:drawThread 2s linear infinite;}
+@keyframes drawThread{to{stroke-dashoffset:-300}}
+#transform-status{
+  font-family:var(--font-display);font-size:28px;letter-spacing:3px;
+  color:var(--pink);text-shadow:0 0 20px var(--pink);
+  text-align:center;
+  animation:statusGlitch 0.4s infinite;
+}
+@keyframes statusGlitch{
+  0%,80%,100%{transform:none}
+  82%{transform:translateX(-2px);color:var(--pink)}
+  84%{transform:translateX(2px);color:var(--green)}
+  86%{transform:none;color:var(--pink)}
+}
+#transform-sub{font-family:var(--font-mono);font-size:10px;color:#555;letter-spacing:2px;text-transform:uppercase;text-align:center;}
+.progress-track{width:240px;height:3px;background:#1a1a2a;border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(to right,var(--purple),var(--pink));border-radius:2px;transition:width 1.4s ease;}
+
+/* ══ TOAST ══ */
+#toast{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(5,5,12,0.98);border:1px solid #2a1a3a;
+  border-radius:16px;padding:16px 22px;max-width:300px;width:90%;
+  text-align:center;z-index:80;opacity:0;pointer-events:none;
+  transition:opacity 0.25s;box-shadow:0 0 40px #ff1a8c22,0 0 80px #0000004a;
+}
+#toast.show{opacity:1;}
+#toast-icon{font-size:32px;margin-bottom:6px;}
+#toast-title{font-family:var(--font-display);font-size:24px;letter-spacing:2px;color:var(--pink);margin-bottom:5px;text-shadow:0 0 15px var(--pink);}
+#toast-text{font-size:11px;color:#888;line-height:1.6;font-family:var(--font-mono);}
+
+/* ══ BIG FX ══ */
+#bigfx{
+  position:fixed;top:38%;left:50%;transform:translate(-50%,-50%);
+  font-family:var(--font-display);font-size:90px;letter-spacing:6px;
+  opacity:0;pointer-events:none;z-index:75;
+  text-shadow:0 0 40px currentColor,0 0 80px currentColor,0 0 120px currentColor;
+  white-space:nowrap;
+}
+
+/* ══ CURSE FLOAT ══ */
+#curse-float{
+  position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);
+  text-align:center;pointer-events:none;z-index:76;opacity:0;
+  transition:opacity 0.4s;
+}
+#curse-float-name{font-family:var(--font-display);font-size:32px;letter-spacing:2px;color:var(--purple);text-shadow:0 0 20px var(--purple);}
+#curse-float-desc{font-family:var(--font-mono);font-size:12px;color:#aa88cc;margin-top:4px;font-style:italic;}
+
+/* ══ PAYMENT MODAL ══ */
+#pay-modal{
+  position:fixed;inset:0;z-index:90;background:rgba(0,0,0,0.88);
+  display:none;align-items:flex-end;justify-content:center;
+}
+#pay-modal.show{display:flex;}
+.pay-sheet{
+  background:#0a0a12;border:1px solid #2a1a3a;
+  border-radius:20px 20px 0 0;padding:24px 20px 36px;
+  width:100%;max-width:420px;
+  animation:slideUp 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:none}}
+.pay-handle{width:40px;height:4px;background:#2a2a3a;border-radius:2px;margin:0 auto 20px;}
+.pay-title{font-family:var(--font-display);font-size:28px;letter-spacing:2px;color:var(--pink);margin-bottom:4px;}
+.pay-desc{font-size:12px;color:#666;font-family:var(--font-mono);margin-bottom:16px;line-height:1.5;}
+.pay-amount{font-family:var(--font-display);font-size:44px;color:var(--amber);text-align:center;margin-bottom:4px;text-shadow:0 0 20px #f0b42944;}
+.pay-kc{font-family:var(--font-mono);font-size:11px;color:#666;text-align:center;margin-bottom:18px;}
+.pay-perks{margin-bottom:18px;}
+.pay-perk{display:flex;gap:8px;padding:6px 0;border-top:1px solid #111;font-size:11px;color:#888;font-family:var(--font-mono);}
+.pay-perk-icon{color:var(--green);}
+.pay-methods{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.pay-method{
+  border:1.5px solid #2a2a3a;border-radius:12px;padding:12px;
+  cursor:pointer;text-align:center;background:#0d0d18;
+  font-family:var(--font-mono);font-size:11px;color:#888;
+  transition:all 0.15s;
+}
+.pay-method:hover{border-color:var(--pink);color:var(--pink);background:#150a14;}
+.pay-method .pay-logo{font-size:20px;margin-bottom:4px;}
+.pay-cancel{
+  width:100%;background:transparent;border:1px solid #222;
+  border-radius:10px;padding:12px;color:#444;
+  font-family:var(--font-mono);font-size:11px;cursor:pointer;
+  transition:all 0.15s;
+}
+.pay-cancel:hover{color:#888;border-color:#333;}
+</style>
+</head>
+<body>
+
+<canvas id="main-canvas"></canvas>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="logo glitch" data-text="EX-BURN">EX<em>-BURN</em></div>
+  <div class="kc-wrap">
+    <div class="kc-icon">K</div>
+    <div class="kc-info">
+      <div class="kc-label">Karma Credit</div>
+      <div class="kc-val" id="kc-val">0 KC</div>
+    </div>
+  </div>
+</div>
+
+<!-- NAMEPLATE -->
+<div id="nameplate">
+  <div class="ex-label">currently destroying</div>
+  <div class="ex-name" id="ex-name">EX-LOVER #001</div>
+  <div class="combo-strip">
+    <div class="combo-pill" id="combo-pill">✦ x1 COMBO ✦</div>
+    <div class="streak-pill">🔥 <span id="streak-num">7</span> days</div>
+  </div>
+</div>
+
+<!-- DAILY FREE POKE -->
+<div id="daily-bar">
+  <div class="daily-icon">🪡</div>
+  <div class="daily-text">
+    <div class="daily-main" id="daily-main">Daily Free Poke ready!</div>
+    <div class="daily-sub" id="daily-sub">Your daily karmic allowance awaits</div>
+  </div>
+  <button class="daily-btn" id="daily-btn" onclick="claimDaily()">CLAIM</button>
+</div>
+
+<!-- DRAG HINT -->
+<div id="drag-hint">↔ drag to rotate · pinch to zoom ↔</div>
+
+<!-- ACTIONS -->
+<div id="actions">
+  <div class="act-grid">
+    <button class="act-btn btn-poke" onclick="doAction('poke')">
+      <div class="aicon">🪡</div>
+      <div class="alabel">POKE HIS EGO</div>
+      <div class="aprice">490 HUF</div>
+      <div class="akc">10 KC</div>
+    </button>
+    <button class="act-btn btn-burn" onclick="doAction('burn')">
+      <div class="aicon">🔥</div>
+      <div class="alabel">TOTAL BURN</div>
+      <div class="aprice">990 HUF</div>
+      <div class="akc">20 KC</div>
+    </button>
+    <button class="act-btn btn-curse" onclick="doAction('curse')">
+      <div class="aicon">🔮</div>
+      <div class="alabel">KARMA CURSE</div>
+      <div class="aprice">1490 HUF</div>
+      <div class="akc">30 KC</div>
+    </button>
+  </div>
+  <div class="act-bottom">
+    <div class="info-chip">Combo: <b id="combo-info">x1</b></div>
+    <input type="file" id="file-inp" accept="image/*" style="display:none" onchange="startTransform(this)">
+    <div class="upload-chip" onclick="document.getElementById('file-inp').click()">⬆ Upload ex photo</div>
+    <div class="info-chip">Curses: <b id="curse-count">0</b></div>
+  </div>
+</div>
+
+<!-- CURSE PICKER -->
+<div id="curse-picker">
+  <div class="curse-title">☆ SPIRITUAL CURSES ☆</div>
+  <div class="curse-sub">Choose your weapon. The Grimoire never forgets.</div>
+  <div class="curse-card" onclick="castCurse('mercury')">
+    <div class="curse-name">☿ Mercury Retrograde</div>
+    <div class="curse-desc">All their messages get sent to the wrong person for 24 hours. Every. Single. One.</div>
+    <div class="curse-price">1490 HUF · 30 KC</div>
+  </div>
+  <div class="curse-card" onclick="castCurse('karma')">
+    <div class="curse-name">🅿 Karma Loop</div>
+    <div class="curse-desc">Every parking spot in the city vanishes just before they arrive. Forever. Or 48 hours. Same thing.</div>
+    <div class="curse-price">1490 HUF · 30 KC</div>
+  </div>
+  <div class="curse-card" onclick="castCurse('ghosting')">
+    <div class="curse-name">👻 Ghosting Nightmare</div>
+    <div class="curse-desc">Every Tinder match ghosts them this week. Poetic justice, served cold.</div>
+    <div class="curse-price">1490 HUF · 30 KC</div>
+  </div>
+  <button class="curse-close" onclick="document.getElementById('curse-picker').classList.remove('show')">← back to ritual</button>
+</div>
+
+<!-- TRANSFORM OVERLAY -->
+<div id="transform-overlay">
+  <div id="transform-ring">
+    <svg id="transform-doll-svg" viewBox="0 0 160 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="bp" width="5" height="5" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="0" x2="5" y2="5" stroke="#4a2c10" stroke-width="0.6"/>
+        </pattern>
+      </defs>
+      <rect x="50" y="180" width="21" height="55" rx="8" fill="#7a5230"/><rect x="50" y="180" width="21" height="55" rx="8" fill="url(#bp)"/>
+      <rect x="89" y="180" width="21" height="55" rx="8" fill="#7a5230"/><rect x="89" y="180" width="21" height="55" rx="8" fill="url(#bp)"/>
+      <rect x="42" y="105" width="76" height="80" rx="12" fill="#7a5230"/><rect x="42" y="105" width="76" height="80" rx="12" fill="url(#bp)"/>
+      <g transform="rotate(-28,30,120)"><rect x="6" y="112" width="38" height="16" rx="7" fill="#7a5230"/><rect x="6" y="112" width="38" height="16" rx="7" fill="url(#bp)"/></g>
+      <g transform="rotate(28,130,120)"><rect x="116" y="112" width="38" height="16" rx="7" fill="#7a5230"/><rect x="116" y="112" width="38" height="16" rx="7" fill="url(#bp)"/></g>
+      <circle cx="80" cy="58" r="38" fill="#7a5230"/><circle cx="80" cy="58" r="38" fill="url(#bp)"/>
+      <!-- Needle animation -->
+      <line class="needle-anim" x1="20" y1="40" x2="65" y2="70" stroke="#c8c8c8" stroke-width="1.5"/>
+      <circle class="needle-anim" cx="20" cy="38" r="5" fill="#ff1a8c"/>
+      <line class="needle-anim" x1="140" y1="30" x2="95" y2="60" stroke="#c8c8c8" stroke-width="1.5"/>
+      <circle class="needle-anim" cx="140" cy="28" r="5" fill="#39ff14"/>
+      <!-- Thread lines -->
+      <path class="thread-anim" d="M30 100 Q80 80 130 100 Q80 120 30 100" fill="none" stroke="#ff1a8c" stroke-width="1.5" stroke-dasharray="300"/>
+      <path class="thread-anim" d="M20 140 Q80 160 140 140" fill="none" stroke="#39ff14" stroke-width="1" stroke-dasharray="300" style="animation-delay:0.5s"/>
+      <!-- Stitch marks -->
+      <path d="M55 118L65 128M65 118L55 128" stroke="#ff1a8c" stroke-width="1.8"/>
+      <path d="M95 118L105 128M105 118L95 128" stroke="#39ff14" stroke-width="1.8"/>
+      <circle cx="65" cy="55" r="9" fill="#555" stroke="#333" stroke-width="0.5"/>
+      <circle cx="65" cy="55" r="5" fill="#222"/>
+      <path d="M62 52L68 58M68 52L62 58" stroke="#ff1a8c" stroke-width="0.9"/>
+      <circle cx="95" cy="55" r="9" fill="#555" stroke="#333" stroke-width="0.5"/>
+      <circle cx="95" cy="55" r="5" fill="#222"/>
+      <path d="M92 52L98 58M98 52L92 58" stroke="#39ff14" stroke-width="0.9"/>
+    </svg>
+  </div>
+  <div id="transform-status">EXTRACTING LIES...</div>
+  <div id="transform-sub">analyzing facial structure</div>
+  <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast">
+  <div id="toast-icon">✨</div>
+  <div id="toast-title">Action!</div>
+  <div id="toast-text">The universe heard you.</div>
+</div>
+
+<!-- BIG FX -->
+<div id="bigfx"></div>
+
+<!-- CURSE FLOAT -->
+<div id="curse-float">
+  <div id="curse-float-name"></div>
+  <div id="curse-float-desc"></div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div id="pay-modal" onclick="closePayIfBg(event)">
+  <div class="pay-sheet">
+    <div class="pay-handle"></div>
+    <div class="pay-title" id="pay-title">POKE HIS EGO</div>
+    <div class="pay-desc" id="pay-desc">Insert 3 virtual needles. The karma will handle the rest.</div>
+    <div class="pay-amount" id="pay-amount">490 HUF</div>
+    <div class="pay-kc" id="pay-kc">+ 10 Karma Credits</div>
+    <div class="pay-perks" id="pay-perks"></div>
+    <div class="pay-methods">
+      <div class="pay-method" onclick="confirmPay()">
+        <div class="pay-logo">🍎</div>Apple Pay
+      </div>
+      <div class="pay-method" onclick="confirmPay()">
+        <div class="pay-logo">G</div>Google Pay
+      </div>
+    </div>
+    <button class="pay-cancel" onclick="closePay()">cancel · maybe later</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" onerror="document.body.innerHTML='<div style=padding:40px;font-family:monospace;color:#ff1a8c;background:#050508>THREE.js failed to load.<br>Check internet connection and reload.</div>'"></script>
+<script>
+/* ══════════════════════════════════════
+   AUDIO ENGINE (Web Audio API)
+══════════════════════════════════════ */
+let audioCtx = null;
+function getAudio(){
+  if(!audioCtx) audioCtx = new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playPoke(){
+  const ctx=getAudio();
+  // sharp stab
+  const osc=ctx.createOscillator();const gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  osc.type='sawtooth';osc.frequency.setValueAtTime(800,ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(200,ctx.currentTime+0.08);
+  gain.gain.setValueAtTime(0.3,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.12);
+  osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.15);
+  // whimper
+  const osc2=ctx.createOscillator();const gain2=ctx.createGain();
+  osc2.connect(gain2);gain2.connect(ctx.destination);
+  osc2.type='sine';osc2.frequency.setValueAtTime(300,ctx.currentTime+0.1);
+  osc2.frequency.exponentialRampToValueAtTime(180,ctx.currentTime+0.5);
+  gain2.gain.setValueAtTime(0,ctx.currentTime+0.1);gain2.gain.setValueAtTime(0.15,ctx.currentTime+0.15);
+  gain2.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.5);
+  osc2.start(ctx.currentTime+0.1);osc2.stop(ctx.currentTime+0.55);
+  haptic([50]);
+}
+
+function playBurn(){
+  const ctx=getAudio();
+  // fire crackle (noise)
+  const buf=ctx.createBuffer(1,ctx.sampleRate*1.5,ctx.sampleRate);
+  const data=buf.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+  const src=ctx.createBufferSource();src.buffer=buf;
+  const filter=ctx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=800;filter.Q.value=0.5;
+  const gain=ctx.createGain();
+  src.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(0.2,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+1.5);
+  src.start(ctx.currentTime);
+  // scream
+  const scream=ctx.createOscillator();const sg=ctx.createGain();
+  scream.connect(sg);sg.connect(ctx.destination);
+  scream.type='sawtooth';scream.frequency.setValueAtTime(400,ctx.currentTime+0.1);
+  scream.frequency.exponentialRampToValueAtTime(600,ctx.currentTime+0.3);
+  scream.frequency.exponentialRampToValueAtTime(300,ctx.currentTime+0.7);
+  sg.gain.setValueAtTime(0,ctx.currentTime+0.1);sg.gain.setValueAtTime(0.12,ctx.currentTime+0.2);
+  sg.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);
+  scream.start(ctx.currentTime+0.1);scream.stop(ctx.currentTime+0.9);
+  haptic([100,50,100,50,200]);
+}
+
+function playCurse(){
+  const ctx=getAudio();
+  // mystical drone
+  [130.8,164.8,196,261.6].forEach((freq,i)=>{
+    const osc=ctx.createOscillator();const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type='sine';osc.frequency.value=freq;
+    gain.gain.setValueAtTime(0,ctx.currentTime+i*0.05);
+    gain.gain.linearRampToValueAtTime(0.06,ctx.currentTime+i*0.05+0.2);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+2.5);
+    osc.start(ctx.currentTime+i*0.05);osc.stop(ctx.currentTime+2.6);
+  });
+  // cackle
+  const cackle=ctx.createOscillator();const cg=ctx.createGain();
+  cackle.connect(cg);cg.connect(ctx.destination);
+  cackle.type='square';cackle.frequency.value=220;
+  [0.5,0.6,0.7,0.85,1.0].forEach(t=>{
+    cg.gain.setValueAtTime(0.08,ctx.currentTime+t);
+    cg.gain.setValueAtTime(0,ctx.currentTime+t+0.05);
+  });
+  cackle.start(ctx.currentTime+0.5);cackle.stop(ctx.currentTime+1.2);
+  haptic([30,20,30,20,30,100,30]);
+}
+
+function playFree(){
+  const ctx=getAudio();
+  const osc=ctx.createOscillator();const gain=ctx.createGain();
+  osc.connect(gain);gain.connect(ctx.destination);
+  osc.type='sine';osc.frequency.setValueAtTime(440,ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(880,ctx.currentTime+0.1);
+  gain.gain.setValueAtTime(0.15,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.2);
+  osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.25);
+  haptic([30]);
+}
+
+function haptic(pattern){
+  if(navigator.vibrate) navigator.vibrate(pattern);
+}
+
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+let kc=0, combo=1, curseCount=0, pendingAction=null;
+let toastTmr=null, dailyClaimed=localStorage.getItem('exburn_daily')===new Date().toDateString();
+
+const ACTIONS={
+  poke:{title:'POKE HIS EGO',desc:'Insert 3 virtual needles. The karma handles the rest.',price:'490 HUF',kc:10,huf:490,icon:'🪡',label:'POKE!',color:'#39ff14',sound:playPoke,perks:['3 virtual needles deployed','+10 Karma Credits','Combo multiplier +1']},
+  burn:{title:'TOTAL BURN',desc:'Spectral flames, full send. Your ex is gonna feel this.',price:'990 HUF',kc:20,huf:990,icon:'🔥',label:'BURN!!',color:'#ff8800',sound:playBurn,perks:['Full spectral burn animation','+20 Karma Credits','Combo multiplier +2','Fire particle storm']},
+  curse:{title:'KARMA CURSE',desc:'Pick your spiritual weapon. The Grimoire never forgets.',price:'1490 HUF',kc:30,huf:1490,icon:'🔮',label:'CURSED!',color:'#bf00ff',sound:playCurse,perks:['Your choice of 3 curses','+30 Karma Credits','Leaderboard boost','Grimoire notification sent']}
+};
+
+const CURSES={
+  mercury:{name:'☿ Mercury Retrograde',desc:'All messages sent to wrong person for 24hrs',icon:'☿',fx:'All their messages are going to the wrong people... for 24 hours.'},
+  karma:{name:'🅿 Karma Loop',desc:'Every parking spot vanishes before they arrive',icon:'🅿',fx:'Every parking spot in the city just filled up. Only for them.'},
+  ghosting:{name:'👻 Ghosting Nightmare',desc:'Every Tinder match ghosts them this week',icon:'👻',fx:'Every Tinder match just read their message and... nothing.'}
+};
+
+/* ══════════════════════════════════════
+   THREE.JS SETUP
+══════════════════════════════════════ */
+const canvas=document.getElementById('main-canvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2.5));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.15;
+renderer.setClearColor(0x050508);
+
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x050508,0.055);
+
+const camera=new THREE.PerspectiveCamera(42,1,0.1,100);
+camera.position.set(0,0.5,8);
+
+function resize(){
+  const w=window.innerWidth,h=window.innerHeight;
+  renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+resize();window.addEventListener('resize',resize);
+
+/* ── TEXTURES ── */
+function mkBurlap(sz=512){
+  const cv=document.createElement('canvas');cv.width=cv.height=sz;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#7a5230';ctx.fillRect(0,0,sz,sz);
+  for(let x=0;x<sz;x+=3){
+    ctx.strokeStyle=`rgba(${80+~~(Math.random()*40)},${50+~~(Math.random()*25)},${15+~~(Math.random()*20)},0.4)`;
+    ctx.lineWidth=1.2+Math.random()*0.8;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+Math.random(),sz);ctx.stroke();
+  }
+  for(let y=0;y<sz;y+=3){
+    ctx.strokeStyle=`rgba(${55+~~(Math.random()*50)},${38+~~(Math.random()*30)},${12+~~(Math.random()*18)},0.35)`;
+    ctx.lineWidth=1+Math.random()*0.6;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(sz,y+Math.random());ctx.stroke();
+  }
+  ctx.globalAlpha=0.1;
+  for(let i=0;i<sz*sz/50;i++){
+    const x=Math.random()*sz,y=Math.random()*sz;
+    ctx.fillStyle=Math.random()>.5?'#fff':'#000';ctx.fillRect(x,y,1.5,1.5);
+  }
+  const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(4,4);return t;
+}
+function mkNormal(sz=256){
+  const cv=document.createElement('canvas');cv.width=cv.height=sz;
+  const ctx=cv.getContext('2d');ctx.fillStyle='#8080ff';ctx.fillRect(0,0,sz,sz);
+  for(let x=0;x<sz;x+=3){ctx.strokeStyle=x%6===0?'rgba(50,50,180,0.5)':'rgba(110,110,240,0.4)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,sz);ctx.stroke();}
+  for(let y=0;y<sz;y+=3){ctx.strokeStyle='rgba(80,80,200,0.35)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(sz,y);ctx.stroke();}
+  const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(4,4);return t;
+}
+function mkBtn(color,sz=64){
+  const cv=document.createElement('canvas');cv.width=cv.height=sz;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle=color;ctx.beginPath();ctx.arc(sz/2,sz/2,sz/2-1,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.5)';ctx.lineWidth=2;ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(sz/2,sz/2,sz/2-5,0,Math.PI*2);ctx.stroke();
+  [[.38,.38],[.62,.38],[.38,.62],[.62,.62]].forEach(([x,y])=>{ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x*sz,y*sz,2.5,0,Math.PI*2);ctx.fill();});
+  return new THREE.CanvasTexture(cv);
+}
+function mkEmoji(emoji,sz=80){
+  const cv=document.createElement('canvas');cv.width=cv.height=sz;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#ff8800';ctx.beginPath();ctx.arc(sz/2,sz/2,sz/2-1,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#cc5500';ctx.lineWidth=2;ctx.stroke();
+  ctx.font=`${sz*.56}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(emoji,sz/2,sz/2+2);
+  return new THREE.CanvasTexture(cv);
+}
+function mkPatch(color,sz=128){
+  const cv=document.createElement('canvas');cv.width=cv.height=sz;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle=color+'22';ctx.fillRect(0,0,sz,sz);
+  ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.strokeRect(6,6,sz-12,sz-12);
+  return new THREE.CanvasTexture(cv);
+}
+function mkLabel(){
+  const cv=document.createElement('canvas');cv.width=220;cv.height=90;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#f5f0e8';ctx.fillRect(0,0,220,90);
+  ctx.strokeStyle='#c8b880';ctx.lineWidth=2;ctx.strokeRect(3,3,214,84);
+  ctx.strokeStyle='#e0d0a0';ctx.lineWidth=1;ctx.setLineDash([4,3]);ctx.strokeRect(8,8,204,74);ctx.setLineDash([]);
+  ctx.fillStyle='#cc1040';ctx.font="bold 26px 'Space Mono',monospace";ctx.textAlign='center';ctx.fillText('EX-LOVER',110,36);
+  ctx.fillStyle='#222';ctx.font="bold 20px 'Space Mono',monospace";ctx.fillText('#001',110,65);
+  return new THREE.CanvasTexture(cv);
+}
+
+const bTex=mkBurlap(),nTex=mkNormal();
+function matB(col=0x7a5230,em=0x000000,ei=0){
+  return new THREE.MeshStandardMaterial({map:bTex,normalMap:nTex,normalScale:new THREE.Vector2(2,2),color:col,roughness:0.96,metalness:0,emissive:em,emissiveIntensity:ei});
+}
+
+/* ── DOLL ── */
+const doll=new THREE.Group();scene.add(doll);
+const allMats=[];
+function addMesh(geo,mat,pos=[0,0,0],rot=[0,0,0],parent=doll){
+  const m=new THREE.Mesh(geo,mat);m.position.set(...pos);m.rotation.set(...rot);m.castShadow=true;parent.add(m);return m;
+}
+function bMat(col=0x7a5230){const m=matB(col);allMats.push(m);return m;}
+
+const body=addMesh(new THREE.CylinderGeometry(0.60,0.52,1.95,12,3),bMat(),[0,-0.1,0]);
+const neck=addMesh(new THREE.CylinderGeometry(0.24,0.30,0.40,10),bMat(0x6a4420),[0,1.08,0]);
+const headM=addMesh(new THREE.SphereGeometry(0.78,20,16),bMat(),[0,2.02,0]);
+headM.scale.set(0.94,1.06,0.91);
+
+function buildArm(s){
+  const g=new THREE.Group();g.position.set(s*0.72,0.32,0);g.rotation.z=s*(Math.PI/2+0.28);
+  [bMat(),bMat(0x6a4420),bMat(),bMat(0x6a4420)].forEach((m,i)=>{
+    const geo=i%2===0?new THREE.CylinderGeometry(0.16,0.14,i<2?1.1:1.0,10):new THREE.SphereGeometry(0.17,8,8);
+    const mesh=new THREE.Mesh(geo,m);mesh.castShadow=true;
+    mesh.position.y=i===0?0:i===1?-0.6:i===2?-1.15:-1.68;g.add(mesh);
+  });doll.add(g);
+}
+buildArm(1);buildArm(-1);
+function buildLeg(s){
+  const g=new THREE.Group();g.position.set(s*0.31,-1.3,0);
+  const geos=[new THREE.CylinderGeometry(0.20,0.18,1.15,10),new THREE.SphereGeometry(0.20,8,8),new THREE.CylinderGeometry(0.17,0.14,1.05,10)];
+  const mats=[bMat(),bMat(0x6a4420),bMat()];
+  const ys=[0,-0.63,-1.2];
+  geos.forEach((geo,i)=>{const m=new THREE.Mesh(geo,mats[i]);m.position.y=ys[i];m.castShadow=true;g.add(m);});
+  doll.add(g);
+}
+buildLeg(1);buildLeg(-1);
+
+// Eyes
+function buildEye(s){
+  const g=new THREE.Group();g.position.set(s*0.30,2.10,0.67);
+  const btn=new THREE.Mesh(new THREE.SphereGeometry(0.16,12,12),new THREE.MeshStandardMaterial({map:mkBtn(s>0?'#44aa44':'#aa4444'),roughness:0.2,metalness:0.1}));
+  const xm=new THREE.LineBasicMaterial({color:0xff1a8c,linewidth:2});
+  const d=0.1;
+  g.add(btn,
+    new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-d,-d,.2),new THREE.Vector3(d,d,.2)]),xm),
+    new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(d,-d,.2),new THREE.Vector3(-d,d,.2)]),xm)
+  );doll.add(g);
+}
+buildEye(1);buildEye(-1);
+
+// Glasses
+const wm=new THREE.MeshStandardMaterial({color:0xaaaaaa,roughness:0.1,metalness:0.95});
+[[-.30,2.10,0.72],[.30,2.10,0.72]].forEach(([x,y,z])=>{
+  const f=new THREE.Mesh(new THREE.TorusGeometry(0.24,0.019,8,20),wm);
+  f.position.set(x,y,z);f.scale.set(1,0.84,0.55);doll.add(f);
+});
+const bpts=[new THREE.Vector3(-0.07,2.10,0.73),new THREE.Vector3(0.07,2.10,0.73)];
+doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(bpts),new THREE.LineBasicMaterial({color:0xaaaaaa,linewidth:2})));
+[[-1,-.53,2.10,0.73],[1,.53,2.10,0.73]].forEach(([s,x,y,z])=>{
+  const tp=[new THREE.Vector3(x,y,z),new THREE.Vector3(x+s*0.22,y-0.02,0.4)];
+  doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(tp),new THREE.LineBasicMaterial({color:0xaaaaaa,linewidth:2})));
+});
+
+// Nose & Mouth
+const nosePts=[new THREE.Vector3(-0.11,1.88,0.74),new THREE.Vector3(0,1.79,0.76),new THREE.Vector3(0.11,1.88,0.74)];
+doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(nosePts),new THREE.LineBasicMaterial({color:0x4a2c10,linewidth:3})));
+const mouthPts=[];for(let i=0;i<=14;i++){const t=i/14,a=Math.PI+t*Math.PI;mouthPts.push(new THREE.Vector3(Math.cos(a)*0.25,Math.sin(a)*0.09+1.62,0.73));}
+doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(mouthPts),new THREE.LineBasicMaterial({color:0x2a1508,linewidth:3})));
+
+// Curly Hair
+const hairColors=[0xff1a8c,0xcc0070,0xff44aa,0x7a5230,0x8b6340];
+for(let i=0;i<24;i++){
+  const angle=(i/24)*Math.PI*2,r=0.28+Math.random()*0.48,curlR=0.04+Math.random()*0.07,len=0.5+Math.random()*0.75;
+  const bx=Math.sin(angle)*r*0.74,bz=Math.cos(angle)*r*0.74,by=2.0+Math.random()*0.45;
+  const pts=[];
+  for(let j=0;j<=20;j++){const t=j/20,ca=t*Math.PI*3;pts.push(new THREE.Vector3(bx+Math.sin(ca+angle)*curlR,by+t*len,bz+Math.cos(ca+angle)*curlR));}
+  doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:hairColors[i%hairColors.length],linewidth:2})));
+}
+// side strands
+for(let s=-1;s<=1;s+=2){
+  for(let i=0;i<8;i++){
+    const sx=s*(0.55+Math.random()*0.2),sy=2.1-i*0.1;
+    const pts=[];
+    for(let j=0;j<=12;j++){const t=j/12;pts.push(new THREE.Vector3(sx+Math.sin(t*Math.PI*2+i)*0.05,sy-t*0.55,0.32+Math.random()*0.12));}
+    doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:hairColors[i%3],linewidth:2})));
+  }
+}
+
+// Beard
+for(let i=0;i<12;i++){
+  const x=-0.26+i*0.047;
+  const pts=[];for(let j=0;j<=10;j++){const t=j/10;pts.push(new THREE.Vector3(x+Math.sin(t*Math.PI*2+i)*0.025,1.68-t*0.35,0.73-t*0.05));}
+  doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:i%2?0x8b6340:0x7a5230,linewidth:2})));
+}
+
+// Neon bands
+function neonRing(y,color,r=0.32){
+  const pts=[];for(let i=0;i<=32;i++){const a=(i/32)*Math.PI*2;pts.push(new THREE.Vector3(Math.sin(a)*r,y,Math.cos(a)*r));}
+  doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color,linewidth:3})));
+}
+neonRing(1.04,0x39ff14,0.31);neonRing(1.1,0xff1a8c,0.29);
+neonRing(-0.9,0xff1a8c,0.55);neonRing(-0.95,0x39ff14,0.53);
+// wrist bands
+[[1.58,0xbf00ff],[-1.58,0xff8800]].forEach(([x,c])=>{
+  const pts=[];for(let i=0;i<=16;i++){const a=(i/16)*Math.PI*2;pts.push(new THREE.Vector3(x+Math.cos(a)*0.14,-.22,Math.sin(a)*0.14));}
+  doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:c,linewidth:3})));
+});
+
+// Patches
+[[-.15,.1,.60,.38,.38,'#ff1a8c'],[.18,-.3,.57,.28,.28,'#39ff14'],[.1,.42,.60,.22,.22,'#bf00ff'],[-.2,-.55,.52,.32,.32,'#ff8800']].forEach(([x,y,z,w,h,c])=>{
+  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshStandardMaterial({map:mkPatch(c),transparent:true,opacity:.9,side:THREE.DoubleSide}));
+  mesh.position.set(x,y,z);doll.add(mesh);
+});
+
+// X stitches
+function addX(x,y,z,s=0.12,c=0xff1a8c){
+  const m=new THREE.LineBasicMaterial({color:c,linewidth:2});
+  doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x-s,y-s,z),new THREE.Vector3(x+s,y+s,z)]),m));
+  doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x+s,y-s,z),new THREE.Vector3(x-s,y+s,z)]),m));
+}
+addX(-.15,.1,.62,.14,0xff1a8c);addX(.18,-.3,.59,.1,0x39ff14);addX(-.3,.55,.55,.09,0xbf00ff);addX(.3,-.05,.56,.09,0xff8800);
+
+// Dashed seam
+function dashLine(pts,c){
+  const m=new THREE.LineDashedMaterial({color:c,linewidth:1,dashSize:.07,gapSize:.05});
+  const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),m);l.computeLineDistances();doll.add(l);
+}
+const sv=[];for(let i=0;i<=12;i++){const t=i/12;sv.push(new THREE.Vector3(.60-t*.1,-1.0+t*2.05,0));}
+dashLine(sv,0xff1a8c);
+const sh=[];for(let i=0;i<=20;i++){const a=(i/20)*Math.PI*2;sh.push(new THREE.Vector3(Math.cos(a)*.60,-.08,Math.sin(a)*.60));}
+dashLine(sh,0x39ff14);
+
+// Emoji pins
+[[.30,.57,.62,'😤',0xff4400],[-.36,.02,.59,'😢',0xff1a8c],[.44,-.23,.52,'😡',0xff6600],[-.1,-.69,.54,'🥺',0xbf00ff],[.02,.87,.62,'😤',0xff8800]].forEach(([x,y,z,em,c])=>{
+  const g=new THREE.Group();
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.088,10,10),new THREE.MeshStandardMaterial({map:mkEmoji(em,80),roughness:.2,metalness:.1,emissive:c,emissiveIntensity:.18}));
+  const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.012,.008,.55,6),new THREE.MeshStandardMaterial({color:0xc0c0c0,roughness:.05,metalness:.95}));
+  shaft.position.y=-.29;g.add(head,shaft);g.position.set(x,y,z);g.rotation.x=.35;doll.add(g);
+});
+
+// Label tag
+const lbl=new THREE.Mesh(new THREE.PlaneGeometry(.52,.21),new THREE.MeshStandardMaterial({map:mkLabel(),roughness:.6,side:THREE.DoubleSide}));
+lbl.position.set(.12,-.04,.63);lbl.rotation.z=.08;doll.add(lbl);
+
+// Key necklace
+const km=new THREE.MeshStandardMaterial({color:0xc8a000,roughness:.2,metalness:.9});
+const keyH=new THREE.Mesh(new THREE.TorusGeometry(.062,.018,6,12),km);keyH.position.set(.07,.74,.63);keyH.rotation.z=.3;doll.add(keyH);
+const keyS=new THREE.Mesh(new THREE.BoxGeometry(.016,.22,.016),km);keyS.position.set(.08,.6,.64);keyS.rotation.z=.3;doll.add(keyS);
+const chainPts=[];for(let i=0;i<=24;i++){const t=i/24,a=Math.PI+t*Math.PI;chainPts.push(new THREE.Vector3(Math.cos(a)*.43,.84+Math.sin(a)*.08,.55));}
+doll.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(chainPts),new THREE.LineBasicMaterial({color:0xc8a000,linewidth:2})));
+
+// Gold button
+doll.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(.1,10,10),new THREE.MeshStandardMaterial({color:0xc8a000,roughness:.15,metalness:.9})),{position:new THREE.Vector3(-.02,-.37,.60)}));
+
+// Shadow
+const sp=new THREE.Mesh(new THREE.CircleGeometry(4,32),new THREE.MeshStandardMaterial({color:0x050508,roughness:1}));
+sp.rotation.x=-Math.PI/2;sp.position.y=-3.1;sp.receiveShadow=true;scene.add(sp);
+
+/* ── LIGHTS ── */
+scene.add(new THREE.AmbientLight(0x111114,1.0));
+const kl=new THREE.DirectionalLight(0xfff4e0,2.8);kl.position.set(4,7,5);kl.castShadow=true;kl.shadow.mapSize.set(2048,2048);scene.add(kl);
+scene.add(Object.assign(new THREE.DirectionalLight(0xff1a8c,1.8),{position:new THREE.Vector3(-5,2,-3)}));
+scene.add(Object.assign(new THREE.DirectionalLight(0x001133,.8),{position:new THREE.Vector3(0,-4,3)}));
+const pPink=new THREE.PointLight(0xff1a8c,.18,8);pPink.position.set(2,2,3);scene.add(pPink);
+const pGreen=new THREE.PointLight(0x39ff14,0,6);pGreen.position.set(-2,1,3);scene.add(pGreen);
+const pPurple=new THREE.PointLight(0xbf00ff,0,6);pPurple.position.set(0,3,3);scene.add(pPurple);
+const pBurn=new THREE.PointLight(0xff6600,0,6);pBurn.position.set(0,-1,3);scene.add(pBurn);
+const lt={pink:.18,green:0,purple:0,burn:0};
+
+/* ── PARTICLES ── */
+const NP=600;
+const pPos=new Float32Array(NP*3),pCol=new Float32Array(NP*3),pSiz=new Float32Array(NP);
+const pVel=Array.from({length:NP},()=>({x:0,y:0,z:0,life:0,maxLife:1,on:false}));
+for(let i=0;i<NP;i++)pPos[i*3+1]=-100;
+const pGeo=new THREE.BufferGeometry();
+pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+pGeo.setAttribute('color',new THREE.BufferAttribute(pCol,3));
+pGeo.setAttribute('size',new THREE.BufferAttribute(pSiz,1));
+const pMat=new THREE.PointsMaterial({size:.13,vertexColors:true,transparent:true,opacity:.9,sizeAttenuation:true,depthWrite:false,blending:THREE.AdditiveBlending});
+scene.add(new THREE.Points(pGeo,pMat));
+let parOn=false,parType=null,parAge=0;
+const PCOLS={poke:[[.22,1,.08],[.3,.9,.1]],burn:[[1,.5,0],[1,.3,0],[1,.8,0]],curse:[[.75,0,1],[.5,0,.8],[1,.2,1]]};
+
+function spawnPar(type){
+  parType=type;parOn=true;parAge=0;
+  const cols=PCOLS[type]||PCOLS.poke;
+  for(let i=0;i<NP;i++){
+    const v=pVel[i];v.on=true;v.life=0;v.maxLife=50+Math.random()*80;
+    v.x=(Math.random()-.5)*(type==='curse'?.5:.3);
+    v.y=type==='burn'?.07+Math.random()*.12:(Math.random()-.5)*.1;
+    v.z=(Math.random()-.5)*(type==='curse'?.5:.3);
+    const sy=type==='burn'?-1.5+Math.random()*3.5:-.5+Math.random()*3;
+    pPos[i*3]=(Math.random()-.5)*1.2;pPos[i*3+1]=sy;pPos[i*3+2]=(Math.random()-.5)*1.2;
+    pSiz[i]=.06+Math.random()*.18;
+    const c=cols[~~(Math.random()*cols.length)];pCol[i*3]=c[0];pCol[i*3+1]=c[1];pCol[i*3+2]=c[2];
+  }
+  pGeo.attributes.position.needsUpdate=pGeo.attributes.color.needsUpdate=pGeo.attributes.size.needsUpdate=true;
+}
+function tickPar(){
+  if(!parOn)return;parAge++;
+  for(let i=0;i<NP;i++){
+    const v=pVel[i];if(!v.on)continue;v.life++;
+    if(v.life>v.maxLife){pPos[i*3+1]=-100;v.on=false;continue;}
+    const t=v.life/v.maxLife;
+    pPos[i*3]+=v.x;pPos[i*3+1]+=v.y;pPos[i*3+2]+=v.z;
+    if(parType==='curse'){pPos[i*3]+=Math.sin(v.life*.25+i*.1)*.018;pPos[i*3+2]+=Math.cos(v.life*.25+i*.1)*.018;}
+    pSiz[i]=Math.max(0,(1-t*t)*(.06+Math.random()*.14));
+  }
+  pGeo.attributes.position.needsUpdate=pGeo.attributes.size.needsUpdate=true;
+  if(parAge>170){parOn=false;for(let i=0;i<NP;i++)pPos[i*3+1]=-100;pGeo.attributes.position.needsUpdate=true;}
+}
+
+/* ══════════════════════════════════════
+   INTERACTION
+══════════════════════════════════════ */
+let drag=false,px=0,py=0,rtX=0,rtY=0,rotX=0,rotY=0,camZ=8,camZT=8,pDist=0;
+document.addEventListener('mousedown',e=>{drag=true;px=e.clientX;py=e.clientY;});
+window.addEventListener('mouseup',()=>drag=false);
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;
+  rtY+=(e.clientX-px)*.009;rtX+=(e.clientY-py)*.007;
+  rtX=Math.max(-.9,Math.min(.9,rtX));px=e.clientX;py=e.clientY;
+  document.getElementById('drag-hint').style.opacity='0';
+});
+window.addEventListener('wheel',e=>{camZT+=e.deltaY*.01;camZT=Math.max(4,Math.min(12,camZT));});
+document.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){drag=true;px=e.touches[0].clientX;py=e.touches[0].clientY;document.getElementById('drag-hint').style.opacity='0';}
+  if(e.touches.length===2)pDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+},{passive:true});
+document.addEventListener('touchend',()=>drag=false,{passive:true});
+document.addEventListener('touchmove',e=>{
+  if(e.touches.length===1&&drag){rtY+=(e.touches[0].clientX-px)*.012;rtX+=(e.touches[0].clientY-py)*.009;rtX=Math.max(-.9,Math.min(.9,rtX));px=e.touches[0].clientX;py=e.touches[0].clientY;}
+  if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);camZT+=(pDist-d)*.025;camZT=Math.max(4,Math.min(12,camZT));pDist=d;}
+},{passive:true});
+
+/* ══════════════════════════════════════
+   ACTION LOGIC
+══════════════════════════════════════ */
+let shakeAmt=0,flashOn=false,flashCol=new THREE.Color(),flashT=0;
+
+function doAction(type){
+  getAudio(); // unlock audio on first interaction
+  if(type==='curse'){document.getElementById('curse-picker').classList.add('show');return;}
+  const d=ACTIONS[type];
+  pendingAction={type,...d};
+  openPay(d);
+}
+
+function openPay(d){
+  document.getElementById('pay-title').textContent=d.title;
+  document.getElementById('pay-desc').textContent=d.desc;
+  document.getElementById('pay-amount').textContent=d.price;
+  document.getElementById('pay-kc').textContent=`+ ${d.kc} Karma Credits`;
+  document.getElementById('pay-perks').innerHTML=d.perks.map(p=>`<div class="pay-perk"><div class="pay-perk-icon">✓</div><div>${p}</div></div>`).join('');
+  document.getElementById('pay-modal').classList.add('show');
+}
+function closePay(){document.getElementById('pay-modal').classList.remove('show');}
+function closePayIfBg(e){if(e.target===document.getElementById('pay-modal'))closePay();}
+
+function confirmPay(){
+  closePay();
+  if(!pendingAction)return;
+  const {type,kc:earn,sound,label,color,icon}=pendingAction;
+  kc+=earn;combo++;curseCount+=(type==='curse'?1:0);
+  updateUI();
+  spawnPar(type);shakeAmt=.45;
+  flashOn=true;flashT=0;flashCol.set(color);
+  if(type==='poke'){lt.green=4;}
+  if(type==='burn'){lt.burn=5;lt.pink=3;kl.color.set(0xff6600);}
+  if(type==='curse'){lt.purple=6;}
+  sound();
+  showFX(label,color);
+  showToast(icon,'The ritual worked!',getResultMsg(type));
+  setTimeout(()=>{lt.pink=.18;lt.green=0;lt.purple=0;lt.burn=0;kl.color.set(0xfff4e0);},2200);
+}
+
+function castCurse(id){
+  document.getElementById('curse-picker').classList.remove('show');
+  const c=CURSES[id];
+  pendingAction={type:'curse',...ACTIONS.curse};
+  openPay({...ACTIONS.curse,desc:`You chose: ${c.name}`,title:'KARMA CURSE',perks:[`Curse: ${c.name}`,'+30 Karma Credits','Leaderboard boost','The universe is notified']});
+  pendingAction.curseId=id;
+  // show curse float after pay
+  pendingAction.curseFx=c.fx;pendingAction.curseName=c.name;
+}
+
+function showCurseFloat(name,desc){
+  const f=document.getElementById('curse-float');
+  document.getElementById('curse-float-name').textContent=name;
+  document.getElementById('curse-float-desc').textContent=desc;
+  f.style.opacity='1';setTimeout(()=>f.style.opacity='0',3500);
+}
+
+function getResultMsg(type){
+  const msgs={
+    poke:["Kyle's Wi-Fi dropped mid-presentation.","The karma arrived in under 30 seconds.","His shoelace untied at the worst moment."],
+    burn:["Spectral fire ignited. His Spotify keeps skipping.","The burn was felt across three time zones.","His ex just texted him. Not you. His other ex."],
+    curse:["The Grimoire accepted your offering.","40 days of karmic chaos, dispatched.","The universe has logged a complaint."]
+  };
+  const arr=msgs[type]||msgs.poke;return arr[~~(Math.random()*arr.length)];
+}
+
+function claimDaily(){
+  getAudio();
+  if(dailyClaimed)return;
+  dailyClaimed=true;localStorage.setItem('exburn_daily',new Date().toDateString());
+  kc+=5;combo++;updateUI();
+  document.getElementById('daily-btn').disabled=true;
+  document.getElementById('daily-main').textContent='Daily poke claimed!';
+  document.getElementById('daily-sub').textContent='Come back tomorrow for your next free hit';
+  playFree();spawnPar('poke');shakeAmt=.2;flashOn=true;flashT=0;flashCol.set(0x39ff14);lt.green=3;
+  showToast('🪡','Daily Free Poke!','The universe gave you this one for free.');
+  setTimeout(()=>{lt.green=0;},1500);
+}
+
+function updateUI(){
+  document.getElementById('kc-val').textContent=kc+' KC';
+  document.getElementById('combo-pill').textContent='✦ x'+combo+' COMBO ✦';
+  document.getElementById('combo-info').textContent='x'+combo;
+  document.getElementById('curse-count').textContent=curseCount;
+}
+
+function showFX(text,color){
+  const el=document.getElementById('bigfx');
+  el.textContent=text;el.style.color=color;el.style.opacity='1';el.style.transition='none';
+  el.style.textShadow=`0 0 40px ${color},0 0 80px ${color}`;
+  setTimeout(()=>{el.style.transition='opacity .7s';el.style.opacity='0';},500);
+}
+function showToast(icon,title,text){
+  document.getElementById('toast-icon').textContent=icon;
+  document.getElementById('toast-title').textContent=title;
+  document.getElementById('toast-text').textContent=text;
+  const t=document.getElementById('toast');t.classList.add('show');
+  clearTimeout(toastTmr);toastTmr=setTimeout(()=>t.classList.remove('show'),3800);
+}
+
+// Check daily
+if(dailyClaimed){
+  document.getElementById('daily-btn').disabled=true;
+  document.getElementById('daily-main').textContent='Daily poke used';
+  document.getElementById('daily-sub').textContent='Resets at midnight — your karma is resting';
+}
+
+/* ══════════════════════════════════════
+   TRANSFORM ANIMATION
+══════════════════════════════════════ */
+const PHASES=[
+  {status:'EXTRACTING LIES...',sub:'analyzing facial structure',pct:15},
+  {status:'STITCHING EGO...',sub:'mapping smug expressions',pct:32},
+  {status:'MAPPING RED FLAGS...',sub:'cataloguing bad decisions',pct:50},
+  {status:'CURSING THE FABRIC...',sub:'weaving resentment into burlap',pct:68},
+  {status:'CALIBRATING KARMA...',sub:'adjusting spiritual alignment',pct:82},
+  {status:'FINALIZING DOLL...',sub:'sewing in the final insults',pct:95},
+  {status:'RITUAL COMPLETE ✦',sub:'your voodoo avatar is ready',pct:100}
+];
+let txTmr=null,phIdx=0;
+
+function startTransform(inp){
+  const file=inp.files[0];if(!file)return;
+  document.getElementById('transform-overlay').classList.add('show');
+  phIdx=0;document.getElementById('progress-fill').style.width='0%';
+  inp.value='';
+  txTmr=setInterval(()=>{
+    const p=PHASES[phIdx];
+    if(!p){clearInterval(txTmr);finishTransform();return;}
+    document.getElementById('transform-status').textContent=p.status;
+    document.getElementById('transform-sub').textContent=p.sub;
+    document.getElementById('progress-fill').style.width=p.pct+'%';
+    phIdx++;
+  },1400);
+}
+function finishTransform(){
+  setTimeout(()=>{
+    document.getElementById('transform-overlay').classList.remove('show');
+    doAction('poke');
+    showToast('🎭','Avatar Created!','Your ex has been immortalized in burlap. The ritual begins.');
+  },1000);
+}
+
+/* ══════════════════════════════════════
+   RENDER LOOP
+══════════════════════════════════════ */
+let frame=0;
+function animate(){
+  requestAnimationFrame(animate);frame++;
+  if(!drag)rtY+=.0035;
+  rotX+=(rtX-rotX)*.07;rotY+=(rtY-rotY)*.07;
+  doll.rotation.x=rotX;doll.rotation.y=rotY;
+  camZ+=(camZT-camZ)*.07;camera.position.z=camZ;
+  doll.position.y=Math.sin(frame*.016)*.07;
+  if(shakeAmt>.009){doll.position.x=(Math.random()-.5)*shakeAmt;shakeAmt*=.84;}else{doll.position.x=0;shakeAmt=0;}
+  if(flashOn){
+    flashT++;const intensity=Math.max(0,1-flashT/32)*1.1;
+    allMats.forEach(m=>{m.emissive.copy(flashCol);m.emissiveIntensity=intensity;});
+    if(flashT>38){flashOn=false;allMats.forEach(m=>m.emissiveIntensity=0);}
+  }
+  pPink.intensity+=(lt.pink-pPink.intensity)*.1;
+  pGreen.intensity+=(lt.green-pGreen.intensity)*.1;
+  pPurple.intensity+=(lt.purple-pPurple.intensity)*.1;
+  pBurn.intensity+=(lt.burn-pBurn.intensity)*.1;
+  pPink.intensity+=Math.sin(frame*.045)*.04;
+  tickPar();
+  renderer.render(scene,camera);
+}
+animate();
+
+// Initial toast
+setTimeout(()=>showToast('🔥','Welcome to EX-BURN','Your ex-doll is ready. The Grimoire is waiting.'),1500);
+setTimeout(()=>{document.getElementById('drag-hint').style.opacity='0';},5000);
+</script>
+</body>
+</html>
